@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "lsof -ti :5001 | xargs kill -9 2>/dev/null; tsx watch src/index.ts",
     "build": "tsc",
-    "start": "lsof -ti :5001 | xargs kill -9 2>/dev/null; node dist/index.js",
+    "start": "node dist/index.js",,
     "migrate": "tsx src/db/migrate.ts"
   },
   "dependencies": {
