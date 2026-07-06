@@ -5,7 +5,7 @@ name = "findmyartisan-web"
 buildCommand = "npm run build"
 
 [deploy]
-startCommand = "npx vite preview --host 0.0.0.0 --port ${PORT:-3000}"
+startCommand = "node server.js"
 healthcheckPath = "/"
 healthcheckTimeout = 15
 restartPolicyType = "ON_FAILURE"
