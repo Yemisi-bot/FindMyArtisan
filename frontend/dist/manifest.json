@@ -1,0 +1,16 @@
+{
+  "name": "FindMyArtisan",
+  "short_name": "FindMyArtisan",
+  "description": "Community Service Provider Locator - Connect with verified local artisans",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fffbeb",
+  "theme_color": "#f59e0b",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📍</text></svg>",
+      "sizes": "100x100",
+      "type": "image/svg+xml"
+    }
+  ]
+}
