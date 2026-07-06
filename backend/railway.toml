@@ -1,0 +1,31 @@
+[service]
+name = "findmyartisan-api"
+
+[build]
+builder = "NIXPACKS"
+buildCommand = "npm install && npm run build"
+
+[deploy]
+startCommand = "node dist/index.js"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 15
+restartPolicyType = "ON_FAILURE"
+
+# ── Persistent volume for uploaded images ─────────────────────────────
+[deploy.volumes]
+uploads = { mountPath = "/data/uploads" }
+
+# ── Environment variables ─────────────────────────────────────────────
+[deploy.env]
+NODE_ENV = "production"
+# Override UPLOAD_DIR so uploads survive redeploys
+UPLOAD_DIR = "/data/uploads"
+
+# ── Railway PostgreSQL auto-injects DATABASE_URL ──────────────────────
+# No need to set it here — Railway's PostgreSQL plugin provides it.
+# Set these in the Railway dashboard under the service's Variables tab:
+#   JWT_SECRET        — a long random string for signing tokens
+#   CLIENT_URL         — your frontend URL, e.g. https://findmyartisan-web.up.railway.app
+#   GMAIL_USER         — Gmail address for sending OTP emails
+#   GMAIL_APP_PASSWORD — Gmail app-specific password
+#   ADMIN_EMAIL / ADMIN_PASSWORD / ADMIN_NAME — initial admin account
