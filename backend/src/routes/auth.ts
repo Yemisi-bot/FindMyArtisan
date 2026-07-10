@@ -16,7 +16,13 @@ async function issueOtp(userId: string, email: string, fullName: string): Promis
     `UPDATE users SET otp_code = $1, otp_expires_at = NOW() + INTERVAL '${OTP_TTL_MINUTES} minutes' WHERE id = $2`,
     [otp, userId]
   );
-  await sendOtpEmail(email, fullName, otp);
+  // Fire-and-forget: the OTP is already persisted above, so the HTTP response
+  // must NOT wait on the SMTP handshake (which can stall on hosts that block
+  // outbound SMTP). sendOtpEmail catches its own errors, but we guard anyway so
+  // a rejection can never crash the process as an unhandled promise.
+  void sendOtpEmail(email, fullName, otp).catch((err) => {
+    console.error('[Email] background send error:', err instanceof Error ? err.message : err);
+  });
 }
 function getJwtSecret(): string {
   return process.env.JWT_SECRET || 'fallback_secret';
