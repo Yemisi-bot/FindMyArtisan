@@ -26,6 +26,13 @@ body {
   min-height: 100vh;
 }
 
+/* ===== DESIGN SYSTEM COMPONENTS =====
+   Wrapped in @layer components so Tailwind utility classes (e.g. pl-10, pr-10,
+   w-full) can override these. In Tailwind v4 all utilities live in cascade
+   layers; unlayered CSS always wins over layered CSS, which caused .glass-input's
+   padding to override pl-10 in production and collapse the icon padding. */
+@layer components {
+
 /* ===== GLASS CARD ===== */
 .glass {
   background: rgba(255, 255, 255, 0.55);
@@ -186,6 +193,8 @@ body {
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
+
+} /* end @layer components */
 
 /* ===== CUSTOM SCROLLBAR ===== */
 ::-webkit-scrollbar { width: 8px; }
