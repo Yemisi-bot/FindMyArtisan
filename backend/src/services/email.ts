@@ -27,8 +27,17 @@ function getTransporter(): nodemailer.Transporter | null {
 
   if (!transporter) {
     transporter = nodemailer.createTransport({
-      service: 'gmail',
+      // Explicit host/port instead of service:'gmail' so we control the timeouts.
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
       auth: { user, pass },
+      // Fail fast. On PaaS hosts (Railway) outbound SMTP is often blocked, which
+      // makes the socket hang indefinitely. These bound any stall to ~10-15s so
+      // the background send gives up quickly instead of hanging forever.
+      connectionTimeout: 10_000, // TCP connect
+      greetingTimeout: 10_000,   // wait for server 220 greeting
+      socketTimeout: 15_000,     // inactivity on an open socket
     });
   }
   return transporter;
