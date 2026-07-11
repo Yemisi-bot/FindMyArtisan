@@ -1,11 +1,10 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { MapPin, Mail, Lock, LogIn, AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
 export default function Login() {
   const { login } = useAuth();
-  const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -28,15 +27,9 @@ export default function Login() {
       await login(email, password);
       setSuccess('Login successful! Redirecting...');
     } catch (err: unknown) {
-      // Unverified account: backend sent a fresh OTP — go verify
-      const resData = (err as { response?: { data?: { message?: string; data?: { needsVerification?: boolean } } } })
-        ?.response?.data;
-      if (resData?.data?.needsVerification) {
-        navigate('/verify-email', { state: { email } });
-        return;
-      }
       const message =
-        resData?.message || (err instanceof Error ? err.message : 'Invalid email or password');
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        (err instanceof Error ? err.message : 'Invalid email or password');
       setError(message);
     } finally {
       setLoading(false);
