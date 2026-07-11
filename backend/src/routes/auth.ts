@@ -62,25 +62,8 @@ router.post('/register', async (req: AuthRequest, res: Response) => {
     }
 
     // Check for existing user
-    const existing = await query(
-      'SELECT id, email, full_name, email_verified FROM users WHERE email = $1',
-      [email]
-    );
+    const existing = await query('SELECT id FROM users WHERE email = $1', [email]);
     if (existing.rows.length > 0) {
-      const existingUser = existing.rows[0];
-
-      // Account exists but was never verified (e.g. the OTP email failed the
-      // first time) — send a fresh code and route them to verification.
-      if (!existingUser.email_verified) {
-        await issueOtp(existingUser.id, existingUser.email, existingUser.full_name);
-        res.status(200).json({
-          success: true,
-          message: 'This email is already registered but not verified. We sent you a new code.',
-          data: { needsVerification: true, email: existingUser.email },
-        });
-        return;
-      }
-
       res.status(409).json({
         success: false,
         message: 'An account with this email already exists. Please sign in instead.',
@@ -91,10 +74,12 @@ router.post('/register', async (req: AuthRequest, res: Response) => {
     // Hash password
     const passwordHash = await bcrypt.hash(password, 12);
 
-    // Create user
+    // Create the user as already active. Email (OTP) verification is disabled
+    // for now — see docs/NEXT_STEPS.md for how to re-enable it. email_verified
+    // is set true so the login gate stays consistent if verification returns.
     const result = await query(
-      `INSERT INTO users (email, password_hash, full_name, role, phone)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO users (email, password_hash, full_name, role, phone, email_verified)
+       VALUES ($1, $2, $3, $4, $5, true)
        RETURNING id, email, full_name, role, phone, created_at`,
       [email, passwordHash, fullName, role, phone || null]
     );
@@ -106,15 +91,30 @@ router.post('/register', async (req: AuthRequest, res: Response) => {
       role: user.role,
     });
 
-    // Email verification: send a one-time code — no token until verified
-    await issueOtp(user.id, user.email, user.full_name);
+    // Issue a session token immediately — the user is logged in on signup.
+    const token = generateToken({
+      id: user.id,
+      email: user.email,
+      passwordHash,
+      fullName: user.full_name,
+      role: user.role,
+      phone: user.phone,
+      createdAt: user.created_at,
+      updatedAt: user.created_at,
+    });
 
     res.status(201).json({
       success: true,
-      message: 'Account created. We sent a verification code to your email.',
+      message: 'Account created successfully.',
       data: {
-        needsVerification: true,
-        email: user.email,
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          fullName: user.full_name,
+          role: user.role,
+          phone: user.phone,
+        },
       },
     });
   } catch (error) {
@@ -165,16 +165,8 @@ router.post('/login', async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    // Block unverified accounts — resend a fresh OTP so they can verify now
-    if (!user.email_verified) {
-      await issueOtp(user.id, user.email, user.full_name);
-      res.status(403).json({
-        success: false,
-        message: 'Please verify your email. We just sent you a new code.',
-        data: { needsVerification: true, email: user.email },
-      });
-      return;
-    }
+    // Email (OTP) verification is disabled for now — see docs/NEXT_STEPS.md.
+    // Any account with valid credentials is allowed to log in.
 
     const token = generateToken({
       id: user.id,
