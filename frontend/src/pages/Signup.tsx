@@ -53,9 +53,11 @@ export default function Signup() {
 
     setLoading(true);
     try {
-      await register(email, password, fullName, phone || undefined, role);
-      setSuccess('Account created! Check your email for a verification code...');
-      setTimeout(() => navigate('/verify-email', { state: { email, role } }), 800);
+      const user = await register(email, password, fullName, phone || undefined, role);
+      setSuccess('Account created! Taking you in...');
+      // Artisans go straight to business profile setup; users go to discovery.
+      const destination = (role || user.role) === 'provider' ? '/register-provider' : '/discover';
+      setTimeout(() => navigate(destination, { replace: true }), 600);
     } catch (err: unknown) {
       // Prefer the API's message (e.g. "email already exists") over axios's generic status text
       const message =
