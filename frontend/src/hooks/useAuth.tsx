@@ -9,7 +9,7 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, fullName: string, phone?: string, role?: string) => Promise<{ needsVerification: boolean; email: string }>;
+  register: (email: string, password: string, fullName: string, phone?: string, role?: string) => Promise<User>;
   verifyOtp: (email: string, otp: string) => Promise<User>;
   logout: () => void;
 }
@@ -78,9 +78,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(res.data.message || 'Registration failed');
     }
 
-    // Registration no longer returns a token — the user must verify their
-    // email with the OTP we sent before a session is issued.
-    return res.data.data as { needsVerification: boolean; email: string };
+    // Email verification is disabled for now — registration logs the user in
+    // immediately by returning a token + user (see docs/NEXT_STEPS.md).
+    const data = res.data.data as { token: string; user: User };
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+    setToken(data.token);
+    setUser(data.user);
+    return data.user;
   }, []);
 
   const verifyOtp = useCallback(async (email: string, otp: string) => {
