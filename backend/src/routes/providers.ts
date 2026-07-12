@@ -10,12 +10,12 @@ const router = Router();
 // Minimum work images an artisan must upload before appearing in search/map
 export const MIN_WORK_IMAGES = 3;
 
-// Visibility rule: NOT suspended by an admin + verified email + at least
-// MIN_WORK_IMAGES work photos. Artisans go live automatically — no admin
-// approval step. Admins can suspend to remove a bad actor.
+// Visibility rule: NOT suspended by an admin + at least MIN_WORK_IMAGES work
+// photos. Artisans go live automatically — no admin approval step. Admins can
+// suspend to remove a bad actor. (Email verification is disabled for now — see
+// docs/NEXT_STEPS.md.)
 const VISIBILITY_CLAUSE = `
   p.is_suspended = false
-  AND u.email_verified = true
   AND (SELECT COUNT(*) FROM work_images w WHERE w.provider_id = p.id) >= ${MIN_WORK_IMAGES}
 `;
 
@@ -190,11 +190,10 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
         work_images: images.rows,
         reviews: reviews.rows,
         visibility: {
-          email_verified: provider.email_verified,
           images_uploaded: imageCount,
           images_required: MIN_WORK_IMAGES,
           is_suspended: provider.is_suspended,
-          is_visible: !provider.is_suspended && provider.email_verified && imageCount >= MIN_WORK_IMAGES,
+          is_visible: !provider.is_suspended && imageCount >= MIN_WORK_IMAGES,
         },
       },
     });
