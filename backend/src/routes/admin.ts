@@ -25,11 +25,12 @@ router.get('/stats', async (_req: AuthRequest, res: Response) => {
       query('SELECT COUNT(*) as count FROM providers WHERE is_suspended = true'),
       query('SELECT COUNT(*) as count FROM reviews'),
       query('SELECT COUNT(*) as count FROM service_categories'),
-      // "Live" = auto-visible: not suspended, email verified, enough work photos
+      // "Live" = auto-visible: not suspended, enough work photos. (Email
+      // verification is disabled for now — see docs/NEXT_STEPS.md.)
       query(
         `SELECT COUNT(*) as count
-         FROM providers p JOIN users u ON p.user_id = u.id
-         WHERE p.is_suspended = false AND u.email_verified = true
+         FROM providers p
+         WHERE p.is_suspended = false
            AND (SELECT COUNT(*) FROM work_images w WHERE w.provider_id = p.id) >= $1`,
         [MIN_WORK_IMAGES]
       ),
