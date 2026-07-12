@@ -38,7 +38,6 @@ interface MyProfile {
   work_images: WorkImage[];
   reviews: MyReview[];
   visibility: {
-    email_verified: boolean;
     images_uploaded: number;
     images_required: number;
     is_suspended: boolean;
@@ -217,7 +216,6 @@ export default function ArtisanDashboard() {
             ) : (
               <>
                 <div className="space-y-1.5">
-                  <CheckItem ok={v.email_verified} label="Email verified" />
                   <CheckItem
                     ok={v.images_uploaded >= v.images_required}
                     label={`Work photos (${v.images_uploaded}/${v.images_required} minimum)`}
