@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Star } from 'lucide-react';
 
 interface StarRatingProps {
   rating: number;
@@ -9,9 +10,9 @@ interface StarRatingProps {
 }
 
 const sizeClasses: Record<string, string> = {
-  sm: 'text-lg',
-  md: 'text-xl',
-  lg: 'text-2xl',
+  sm: 'h-4 w-4',
+  md: 'h-5 w-5',
+  lg: 'h-6 w-6',
 };
 
 export default function StarRating({
@@ -45,7 +46,7 @@ export default function StarRating({
 
   return (
     <span
-      className={`inline-flex gap-1 ${interactive ? 'cursor-pointer' : ''}`}
+      className={`inline-flex items-center gap-1 ${interactive ? 'cursor-pointer' : ''}`}
       role={interactive ? 'radiogroup' : 'img'}
       aria-label={`Rating: ${rating} out of ${maxRating}`}
     >
@@ -53,38 +54,31 @@ export default function StarRating({
         const value = i + 1;
         const filled = value <= displayRating;
 
+        const star = (
+          <Star
+            className={`${sizeClasses[size]} transition-colors duration-150 ${filled ? 'fill-clay text-clay' : 'text-charcoal/20'}`}
+            aria-hidden="true"
+          />
+        );
+
+        if (!interactive) {
+          return <span key={value}>{star}</span>;
+        }
+
         return (
-          <span
+          <button
             key={value}
-            role={interactive ? 'radio' : undefined}
-            aria-checked={interactive ? value === displayRating : undefined}
-            aria-label={interactive ? `${value} star${value > 1 ? 's' : ''}` : undefined}
-            tabIndex={interactive ? 0 : undefined}
-            onKeyDown={
-              interactive
-                ? (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      handleClick(value);
-                    }
-                  }
-                : undefined
-            }
-            className={`${sizeClasses[size]} transition-all duration-200 ${
-              filled
-                ? 'text-amber-500'
-                : 'text-gray-300'
-            } ${
-              interactive
-                ? 'hover:text-amber-400 hover:scale-110 cursor-pointer'
-                : ''
-            }`}
+            type="button"
+            role="radio"
+            aria-checked={value === displayRating}
+            aria-label={`${value} star${value > 1 ? 's' : ''}`}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-charcoal/35 transition-transform hover:scale-110 focus-visible:outline-brand"
             onClick={() => handleClick(value)}
             onMouseEnter={() => handleMouseEnter(value)}
             onMouseLeave={handleMouseLeave}
           >
-            {filled ? '★' : '☆'}
-          </span>
+            {star}
+          </button>
         );
       })}
     </span>
