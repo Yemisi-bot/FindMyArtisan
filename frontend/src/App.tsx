@@ -58,7 +58,7 @@ function AppRoutes() {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="flex-1 pt-24">
+      <main className="flex-1 pt-16">
         <Suspense fallback={<LoadingFallback />}>
           <Routes>
             <Route path="/" element={<HomeRoute />} />
