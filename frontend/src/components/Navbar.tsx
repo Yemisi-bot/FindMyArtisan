@@ -40,10 +40,10 @@ export default function Navbar() {
 
   // Shared active/idle styles for nav links
   const linkClass = ({ isActive }: { isActive: boolean }) =>
-    `px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+    `border-b-2 px-3 py-2 text-sm font-semibold transition-colors ${
       isActive
-        ? 'bg-amber-500/15 text-amber-700'
-        : 'text-charcoal/70 hover:text-charcoal hover:bg-white/40'
+        ? 'border-brand text-brand'
+        : 'border-transparent text-charcoal/65 hover:text-charcoal'
     }`;
 
   // Primary links shown in the center of the bar
@@ -69,8 +69,8 @@ export default function Navbar() {
         <NavLink
           to="/admin"
           className={({ isActive }) =>
-            `px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-              isActive ? 'bg-teal-500/15 text-teal-700' : 'text-teal-700/80 hover:text-teal-700 hover:bg-teal-50/60'
+            `border-b-2 px-3 py-2 text-sm font-semibold transition-colors ${
+              isActive ? 'border-brand text-brand' : 'border-transparent text-brand/75 hover:text-brand'
             }`
           }
           onClick={closeMobile}
@@ -82,16 +82,15 @@ export default function Navbar() {
   );
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto my-3">
-        <div className="glass-strong px-5 py-3 flex items-center justify-between">
+    <nav className="fixed inset-x-0 top-0 z-50 border-b border-ink/10 bg-[#fffefa]/92 backdrop-blur-md">
+      <div className="max-w-7xl mx-auto h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group" onClick={closeMobile}>
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/25 group-hover:shadow-amber-500/40 transition-shadow">
+            <div className="w-9 h-9 rounded-lg bg-brand flex items-center justify-center shadow-[0_3px_0_#084852] transition-transform group-hover:-translate-y-0.5">
               <MapPin className="w-5 h-5 text-white" />
             </div>
-            <span className="text-lg font-bold text-charcoal hidden sm:block">
-              FindMy<span className="text-amber-600">Artisan</span>
+            <span className="font-display text-xl font-semibold text-charcoal hidden sm:block">
+              FindMy<span className="text-clay">Artisan</span>
             </span>
           </Link>
 
@@ -104,21 +103,21 @@ export default function Navbar() {
               <div className="relative" ref={accountRef}>
                 <button
                   onClick={() => setAccountOpen((o) => !o)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/40 hover:bg-white/60 transition-colors"
+                  className="flex min-h-10 items-center gap-2 rounded-lg border border-ink/10 bg-white px-3 py-1.5 transition-colors hover:border-brand/40 hover:bg-surface-muted"
                 >
-                  <span className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-xs font-bold">
+                  <span className="w-7 h-7 rounded-full bg-brand flex items-center justify-center text-white text-xs font-bold">
                     {user?.fullName?.charAt(0).toUpperCase() || 'U'}
                   </span>
                   <span className="text-sm font-medium text-charcoal">
                     {user?.fullName?.split(' ')[0] || 'User'}
                   </span>
                   {isProvider && (
-                    <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">
+                    <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-bold">
                       Artisan
                     </span>
                   )}
                   {isAdmin && (
-                    <span className="text-xs bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded-full font-medium">
+                    <span className="text-xs bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded-full font-bold">
                       Admin
                     </span>
                   )}
@@ -126,8 +125,8 @@ export default function Navbar() {
                 </button>
 
                 {accountOpen && (
-                  <div className="absolute right-0 mt-2 w-60 glass-strong p-2 animate-fade-in">
-                    <div className="px-3 py-2 border-b border-white/30 mb-1">
+                  <div className="absolute right-0 mt-2 w-60 border border-ink/10 bg-[#fffefa] p-2 shadow-[0_14px_28px_rgba(21,50,58,0.14)] animate-fade-in">
+                    <div className="px-3 py-2 border-b border-ink/10 mb-1">
                       <p className="text-sm font-semibold text-charcoal truncate">{user?.fullName}</p>
                       <p className="text-xs text-charcoal/50 truncate">{user?.email}</p>
                     </div>
@@ -164,25 +163,26 @@ export default function Navbar() {
           {/* Mobile Hamburger */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-xl hover:bg-white/30 transition-colors"
+            className="md:hidden inline-flex h-11 w-11 items-center justify-center rounded-lg text-charcoal hover:bg-surface-muted transition-colors"
             aria-label="Toggle menu"
           >
             {mobileMenuOpen ? <X className="w-5 h-5 text-charcoal" /> : <Menu className="w-5 h-5 text-charcoal" />}
           </button>
-        </div>
+      </div>
 
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden mt-2 glass-strong p-4 flex flex-col gap-1.5 animate-fade-in">
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+          <div className="md:hidden border-t border-ink/10 bg-[#fffefa] px-4 py-3 shadow-[0_12px_22px_rgba(21,50,58,0.1)] animate-fade-in">
+            <div className="max-w-7xl mx-auto flex flex-col gap-1.5 sm:px-2">
             {navLinks}
-            <hr className="border-white/20 my-1" />
+              <hr className="border-ink/10 my-1" />
             {isAuthenticated ? (
               <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/20">
-                  {isAdmin ? <Shield className="w-4 h-4 text-teal-600" /> : <User className="w-4 h-4 text-amber-600" />}
+                <div className="flex items-center gap-2 border border-ink/10 bg-surface-muted px-4 py-2 rounded-lg">
+                  {isAdmin ? <Shield className="w-4 h-4 text-teal-600" /> : <User className="w-4 h-4 text-clay" />}
                   <span className="text-sm font-medium text-charcoal">{user?.fullName || 'User'}</span>
                   {isProvider && (
-                    <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">Artisan</span>
+                    <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-bold">Artisan</span>
                   )}
                 </div>
                 <button
@@ -203,9 +203,9 @@ export default function Navbar() {
                 </Link>
               </div>
             )}
+            </div>
           </div>
-        )}
-      </div>
+      )}
     </nav>
   );
 }
@@ -215,7 +215,7 @@ function DropdownLink({ to, icon, label, onClick }: { to: string; icon: React.Re
     <Link
       to={to}
       onClick={onClick}
-      className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-charcoal/80 hover:text-charcoal hover:bg-white/40 transition-colors"
+      className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold text-charcoal/80 hover:text-charcoal hover:bg-surface-muted transition-colors"
     >
       {icon}
       {label}
