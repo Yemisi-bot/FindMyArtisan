@@ -12,12 +12,14 @@ import {
   History,
   Star,
   Phone,
+  CircleCheck,
 } from 'lucide-react';
 import L from 'leaflet';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { useAuth } from '../hooks/useAuth';
 import { providersApi } from '../services/api';
 import ProviderCard from '../components/ProviderCard';
+import TradeIcon from '../components/TradeIcon';
 import type { ServiceProvider, ServiceCategory, Geoposition } from '../types';
 
 interface RecentSearch {
@@ -185,9 +187,9 @@ export default function Dashboard() {
     L.marker([effectivePosition.latitude, effectivePosition.longitude], {
       icon: L.divIcon({
         className: 'user-marker',
-        html: '<div style="font-size: 28px; line-height: 1;">📍</div>',
-        iconSize: [30, 30],
-        iconAnchor: [15, 15],
+        html: '<span class="user-location-marker" aria-hidden="true"></span>',
+        iconSize: [20, 20],
+        iconAnchor: [10, 10],
       }),
     })
       .addTo(map)
@@ -201,11 +203,11 @@ export default function Dashboard() {
       const popupHtml = `
         <div style="min-width: 140px;">
           <b style="font-size: 14px;">${p.business_name}</b><br/>
-          <span style="font-size: 13px;">${p.category_icon} ${p.category_name}</span><br/>
-          <span style="color: #f59e0b; font-size: 13px;">&#9733; ${Number(p.average_rating).toFixed(1)}</span>
+          <span style="font-size: 13px;">${p.category_name}</span><br/>
+          <span style="color: #0e6570; font-size: 13px; font-weight: 700;">${Number(p.average_rating).toFixed(1)} rating</span>
           <span style="color: #6b7280; font-size: 12px;"> (${p.review_count} reviews)</span><br/>
           ${p.distance_km != null ? `<span style="color: #6b7280; font-size: 12px;">${p.distance_km.toFixed(1)} km away</span><br/>` : ''}
-          <a href="/provider/${p.id}" style="display:inline-block;margin-top:6px;color:#d97706;font-weight:600;font-size:12px;">View profile →</a>
+          <a href="/provider/${p.id}" style="display:inline-block;margin-top:6px;color:#0e6570;font-weight:700;font-size:12px;">View profile</a>
         </div>
       `;
 
@@ -293,29 +295,30 @@ export default function Dashboard() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 animate-fade-in">
       {/* ── Header ──────────────────────────────────────────────────────── */}
-      <div className="mb-6 stagger">
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
-          Discover Artisans Near You
-        </h1>
-        <p className="mt-2 text-gray-600 flex items-center gap-2">
-          <MapPin size={16} className="text-amber-500" />
-          {locationStatus}
-        </p>
+      <div className="mb-6 border-b border-ink/10 pb-5">
+        <p className="font-mono text-xs font-medium uppercase tracking-[0.12em] text-clay">Discover</p>
+        <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <h1 className="font-display text-3xl font-semibold text-ink md:text-4xl">Artisans near you</h1>
+          <p className="flex items-center gap-2 text-sm text-charcoal/65">
+            <MapPin size={16} className="text-brand" />
+            {locationStatus}
+          </p>
+        </div>
       </div>
 
       {/* ── Filter Bar ──────────────────────────────────────────────────── */}
-      <div className="glass p-4 md:p-5 mb-6">
+      <section className="border border-ink/10 bg-[#fffefa] p-4 shadow-[0_8px_18px_rgba(21,50,58,0.05)] md:p-5 mb-6">
         <div className="flex flex-wrap items-end gap-4">
           {/* Free-text search */}
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">
-              <Search size={12} className="inline mr-1" />
+            <label className="block font-mono text-[11px] font-medium text-charcoal/60 uppercase tracking-[0.12em] mb-1.5">
+              <Search size={12} className="inline mr-1" aria-hidden="true" />
               What do you need?
             </label>
             <input
               type="text"
               className="glass-input"
-              placeholder="e.g. plumber, furniture, wiring..."
+              placeholder="e.g. plumbing or wiring"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -323,8 +326,8 @@ export default function Dashboard() {
 
           {/* Category filter */}
           <div className="flex-1 min-w-[160px]">
-            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">
-              <SlidersHorizontal size={12} className="inline mr-1" />
+            <label className="block font-mono text-[11px] font-medium text-charcoal/60 uppercase tracking-[0.12em] mb-1.5">
+              <SlidersHorizontal size={12} className="inline mr-1" aria-hidden="true" />
               Category
             </label>
             <select
@@ -335,7 +338,7 @@ export default function Dashboard() {
               <option value="">All Categories</option>
               {categories.map((cat) => (
                 <option key={cat.id} value={cat.slug}>
-                  {cat.icon} {cat.name}
+                  {cat.name}
                 </option>
               ))}
             </select>
@@ -343,7 +346,7 @@ export default function Dashboard() {
 
           {/* Radius filter */}
           <div className="w-[120px]">
-            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">
+            <label className="block font-mono text-[11px] font-medium text-charcoal/60 uppercase tracking-[0.12em] mb-1.5">
               Radius
             </label>
             <select
@@ -361,7 +364,7 @@ export default function Dashboard() {
 
           {/* Use My Location */}
           <div>
-            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5 invisible">
+            <label className="block font-mono text-[11px] font-medium text-charcoal/60 uppercase tracking-[0.12em] mb-1.5 invisible">
               &nbsp;
             </label>
             <button
@@ -376,7 +379,7 @@ export default function Dashboard() {
 
           {/* Refresh */}
           <div>
-            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5 invisible">
+            <label className="block font-mono text-[11px] font-medium text-charcoal/60 uppercase tracking-[0.12em] mb-1.5 invisible">
               &nbsp;
             </label>
             <button
@@ -392,16 +395,19 @@ export default function Dashboard() {
 
           {/* View toggle */}
           <div className="ml-auto">
-            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5 invisible">
+            <label className="block font-mono text-[11px] font-medium text-charcoal/60 uppercase tracking-[0.12em] mb-1.5 invisible">
               &nbsp;
             </label>
-            <div className="flex rounded-xl overflow-hidden border border-white/40">
+            <div className="flex overflow-hidden rounded-lg border border-ink/15">
               <button
                 type="button"
+                aria-label="Show map view"
+                aria-pressed={mapView}
+                title="Show map view"
                 className={`px-4 py-2.5 text-sm font-medium flex items-center gap-1.5 transition-all ${
                   mapView
-                    ? 'bg-amber-500 text-white shadow-md'
-                    : 'bg-white/20 text-gray-700 hover:bg-white/30'
+                    ? 'bg-brand text-white'
+                    : 'bg-surface text-charcoal/70 hover:bg-surface-muted'
                 }`}
                 onClick={() => setMapView(true)}
               >
@@ -410,10 +416,13 @@ export default function Dashboard() {
               </button>
               <button
                 type="button"
+                aria-label="Show list view"
+                aria-pressed={!mapView}
+                title="Show list view"
                 className={`px-4 py-2.5 text-sm font-medium flex items-center gap-1.5 transition-all ${
                   !mapView
-                    ? 'bg-amber-500 text-white shadow-md'
-                    : 'bg-white/20 text-gray-700 hover:bg-white/30'
+                    ? 'bg-brand text-white'
+                    : 'bg-surface text-charcoal/70 hover:bg-surface-muted'
                 }`}
                 onClick={() => setMapView(false)}
               >
@@ -426,19 +435,19 @@ export default function Dashboard() {
 
         {/* Manual coordinate input (visible when geolocation errors) */}
         {showManualInput && (
-          <div className="mt-4 pt-4 border-t border-white/30 animate-fade-in">
+          <div className="mt-4 pt-4 border-t border-ink/10 animate-fade-in">
             <div className="flex items-start gap-2 mb-3">
-              <AlertCircle size={18} className="text-amber-600 mt-0.5 shrink-0" />
+              <AlertCircle size={18} className="text-clay mt-0.5 shrink-0" />
               <div>
-                <p className="text-sm font-medium text-gray-800">{geoError}</p>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-sm font-bold text-ink">{geoError}</p>
+                <p className="text-xs text-charcoal/55 mt-0.5">
                   Enter your coordinates manually to find nearby artisans.
                 </p>
               </div>
             </div>
             <div className="flex flex-wrap items-end gap-3">
               <div className="w-[140px]">
-                <label className="block text-xs font-semibold text-gray-600 mb-1">Latitude</label>
+                <label className="block text-xs font-bold text-charcoal/65 mb-1">Latitude</label>
                 <input
                   type="number"
                   step="any"
@@ -449,7 +458,7 @@ export default function Dashboard() {
                 />
               </div>
               <div className="w-[140px]">
-                <label className="block text-xs font-semibold text-gray-600 mb-1">Longitude</label>
+                <label className="block text-xs font-bold text-charcoal/65 mb-1">Longitude</label>
                 <input
                   type="number"
                   step="any"
@@ -471,19 +480,19 @@ export default function Dashboard() {
             </div>
           </div>
         )}
-      </div>
+      </section>
 
       {/* ── Recent searches ─────────────────────────────────────────────── */}
       {isAuthenticated && recentSearches.length > 0 && (
         <div className="mb-6 animate-fade-in">
-          <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+          <div className="flex items-center gap-2 mb-2 font-mono text-[11px] font-medium text-charcoal/60 uppercase tracking-[0.12em]">
             <History size={12} />
             Recent searches
           </div>
           <div className="flex flex-wrap gap-2">
             {recentSearches.map((s) => {
               const cat = categories.find((c) => c.slug === s.category_slug);
-              const label = [cat ? `${cat.icon} ${cat.name}` : '', s.search_term ? `"${s.search_term}"` : '']
+              const label = [cat?.name || '', s.search_term ? `"${s.search_term}"` : '']
                 .filter(Boolean)
                 .join(' · ');
               if (!label) return null;
@@ -494,7 +503,7 @@ export default function Dashboard() {
                     setSelectedCategory(s.category_slug || '');
                     setSearchTerm(s.search_term || '');
                   }}
-                  className="px-3 py-1.5 rounded-full text-sm bg-white/40 hover:bg-white/60 border border-white/50 text-gray-700 transition-all"
+                  className="rounded-full border border-ink/10 bg-surface px-3 py-1.5 text-sm font-semibold text-charcoal/70 transition-colors hover:border-brand/40 hover:text-brand"
                 >
                   {label}
                 </button>
@@ -506,8 +515,8 @@ export default function Dashboard() {
 
       {/* ── Contacted artisans: come back and review ─────────────────────── */}
       {isAuthenticated && contacted.length > 0 && (
-        <div className="glass p-4 md:p-5 mb-6 animate-fade-in">
-          <div className="flex items-center gap-2 mb-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+        <section className="glass p-4 md:p-5 mb-6 animate-fade-in">
+          <div className="flex items-center gap-2 mb-3 font-mono text-[11px] font-medium text-charcoal/60 uppercase tracking-[0.12em]">
             <Phone size={12} />
             Artisans you contacted
           </div>
@@ -516,23 +525,24 @@ export default function Dashboard() {
               <Link
                 key={c.id}
                 to={`/provider/${c.id}`}
-                className="flex-shrink-0 min-w-[210px] rounded-xl bg-white/40 hover:bg-white/60 border border-white/50 p-3 transition-all"
+                className="flex-shrink-0 min-w-[210px] rounded-lg border border-ink/10 bg-surface p-3 transition-colors hover:border-brand/40 hover:bg-surface-muted"
               >
-                <div className="flex items-center gap-2 font-semibold text-gray-800 text-sm">
-                  <span>{c.category_icon}</span>
+                <div className="flex items-center gap-2 font-bold text-ink text-sm">
+                  <span className="flex h-7 w-7 items-center justify-center bg-brand/8 text-brand"><TradeIcon category={c.category_name} className="h-3.5 w-3.5" /></span>
                   <span className="truncate">{c.business_name}</span>
                 </div>
-                <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
-                  <Star size={12} className="text-amber-500 fill-amber-500" />
+                <div className="flex items-center gap-1 mt-1 text-xs text-charcoal/55">
+                  <Star size={12} className="text-clay fill-clay" />
                   {Number(c.average_rating).toFixed(1)} · {c.review_count} reviews
                 </div>
-                <div className={`mt-2 text-xs font-semibold ${c.my_review_id ? 'text-green-600' : 'text-amber-600'}`}>
-                  {c.my_review_id ? '✓ Reviewed' : 'Leave a review →'}
+                <div className={`mt-2 flex items-center gap-1 text-xs font-bold ${c.my_review_id ? 'text-leaf' : 'text-brand'}`}>
+                  {c.my_review_id && <CircleCheck className="h-3.5 w-3.5" />}
+                  {c.my_review_id ? 'Reviewed' : 'Leave a review'}
                 </div>
               </Link>
             ))}
           </div>
-        </div>
+        </section>
       )}
 
       {/* ── Main Content ────────────────────────────────────────────────── */}
@@ -551,10 +561,10 @@ export default function Dashboard() {
                 </p>
               </>
             ) : (
-              <div className="glass p-10 flex flex-col items-center justify-center text-center min-h-[300px] animate-fade-in">
-                <MapPin size={48} className="text-gray-400 mb-4" />
-                <h3 className="font-semibold text-gray-700 mb-2">Map Unavailable</h3>
-                <p className="text-sm text-gray-500 mb-4">
+              <div className="border border-dashed border-ink/20 bg-surface-muted p-10 flex flex-col items-center justify-center text-center min-h-[300px] animate-fade-in">
+                <MapPin size={48} className="text-brand/45 mb-4" />
+                <h3 className="font-bold text-ink mb-2">Map unavailable</h3>
+                <p className="text-sm text-charcoal/60 mb-4">
                   Enable location services or enter coordinates above to see the map.
                 </p>
                 <button
@@ -581,16 +591,16 @@ export default function Dashboard() {
           {/* Results header */}
           <div className="flex items-center justify-between mb-4">
             {!isLoading && effectivePosition ? (
-              <p className="text-sm text-gray-600">
-                <span className="font-semibold text-gray-800">{providers.length}</span>{' '}
+              <p className="text-sm text-charcoal/65">
+                <span className="font-bold text-ink">{providers.length}</span>{' '}
                 {providers.length === 1 ? 'artisan' : 'artisans'} found within{' '}
-                <span className="font-semibold text-gray-800">{radius} km</span>
+                <span className="font-bold text-ink">{radius} km</span>
               </p>
             ) : (
               <span />
             )}
             {selectedCategory && (
-              <span className="text-xs text-gray-500 bg-white/20 px-2.5 py-1 rounded-full">
+              <span className="rounded-full bg-brand/10 px-2.5 py-1 text-xs font-bold text-brand">
                 {categories.find((c) => c.slug === selectedCategory)?.name || selectedCategory}
               </span>
             )}
@@ -606,10 +616,10 @@ export default function Dashboard() {
 
           {/* Error state (keeps results column from going blank) */}
           {!isLoading && fetchError && (
-            <div className="glass p-10 flex flex-col items-center justify-center text-center animate-fade-in">
+            <div className="border border-red-200 bg-red-50 p-10 flex flex-col items-center justify-center text-center animate-fade-in">
               <AlertCircle size={48} className="text-red-400 mb-4" />
-              <h3 className="font-semibold text-gray-700 mb-2">Couldn&apos;t load artisans</h3>
-              <p className="text-sm text-gray-500 max-w-sm mb-4">{fetchError}</p>
+              <h3 className="font-bold text-red-900 mb-2">Couldn&apos;t load artisans</h3>
+              <p className="text-sm text-red-700/80 max-w-sm mb-4">{fetchError}</p>
               <button
                 type="button"
                 className="btn-glass inline-flex items-center gap-2 text-sm"
@@ -623,10 +633,10 @@ export default function Dashboard() {
 
           {/* Empty state */}
           {!isLoading && !fetchError && providers.length === 0 && effectivePosition && (
-            <div className="glass p-10 flex flex-col items-center justify-center text-center animate-fade-in">
-              <Search size={48} className="text-gray-400 mb-4" />
-              <h3 className="font-semibold text-gray-700 mb-2">No Artisans Found</h3>
-              <p className="text-sm text-gray-500 max-w-sm">
+            <div className="border border-dashed border-ink/20 bg-surface-muted p-10 flex flex-col items-center justify-center text-center animate-fade-in">
+              <Search size={48} className="text-brand/45 mb-4" />
+              <h3 className="font-bold text-ink mb-2">No artisans found</h3>
+              <p className="text-sm text-charcoal/60 max-w-sm">
                 No providers found in this area. Try expanding your search radius or selecting a
                 different category.
               </p>
@@ -635,10 +645,10 @@ export default function Dashboard() {
 
           {/* Waiting for location */}
           {!isLoading && !fetchError && !effectivePosition && !showManualInput && (
-            <div className="glass p-10 flex flex-col items-center justify-center text-center animate-fade-in">
-              <Navigation size={48} className="text-gray-400 mb-4" />
-              <h3 className="font-semibold text-gray-700 mb-2">Waiting for Location</h3>
-              <p className="text-sm text-gray-500 mb-4">
+            <div className="border border-dashed border-ink/20 bg-surface-muted p-10 flex flex-col items-center justify-center text-center animate-fade-in">
+              <Navigation size={48} className="text-brand/45 mb-4" />
+              <h3 className="font-bold text-ink mb-2">Waiting for location</h3>
+              <p className="text-sm text-charcoal/60 mb-4">
                 We need your location to find nearby artisans. Click below to share it.
               </p>
               <button
