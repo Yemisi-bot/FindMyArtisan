@@ -1,25 +1,27 @@
 import { Link } from 'react-router-dom';
 import {
+  ArrowUpRight,
   MapPin,
   Star,
   Zap,
-  Wrench,
-  Shield,
+  ShieldCheck,
   Navigation,
   Smartphone,
   ChevronRight,
+  Search,
 } from 'lucide-react';
+import TradeIcon from '../components/TradeIcon';
 
 const categories = [
-  { name: 'Electrician', icon: '⚡' },
-  { name: 'Plumber', icon: '🔧' },
-  { name: 'Carpenter', icon: '🪚' },
-  { name: 'Painter', icon: '🎨' },
-  { name: 'Tiler', icon: '📐' },
-  { name: 'Welder', icon: '🔥' },
-  { name: 'Generator Tech', icon: '⚙️' },
-  { name: 'AC Tech', icon: '❄️' },
-  { name: 'Solar Installer', icon: '☀️' },
+  { name: 'Electrician', slug: 'electrician' },
+  { name: 'Plumber', slug: 'plumber' },
+  { name: 'Carpenter', slug: 'carpenter' },
+  { name: 'Painter', slug: 'painter' },
+  { name: 'Tiler', slug: 'tiler' },
+  { name: 'Welder', slug: 'welder' },
+  { name: 'Generator Tech', slug: 'generator-tech' },
+  { name: 'AC Tech', slug: 'ac-tech' },
+  { name: 'Solar Installer', slug: 'solar-installer' },
 ];
 
 const steps = [
@@ -48,7 +50,7 @@ const steps = [
 
 const features = [
   {
-    icon: Shield,
+    icon: ShieldCheck,
     title: 'Proof of Real Work',
     description:
       'Every artisan shows real photos of their work before they go live.',
@@ -75,181 +77,104 @@ const features = [
 
 export default function Landing() {
   return (
-    <div className="relative overflow-hidden">
-      {/* ===== HERO SECTION ===== */}
-      <section className="relative flex flex-col items-center justify-center pt-6 md:pt-10 pb-16 md:pb-20">
-        {/* Decorative Background Blobs */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-gradient-to-br from-amber-300/20 to-amber-500/10 blur-3xl" />
-          <div className="absolute -bottom-32 -left-32 w-80 h-80 rounded-full bg-gradient-to-tr from-teal-300/15 to-amber-200/10 blur-3xl" />
-          <div className="absolute top-1/3 left-1/4 w-64 h-64 rounded-full bg-amber-200/10 blur-3xl" />
-          <div className="absolute bottom-1/4 right-1/3 w-72 h-72 rounded-full bg-amber-300/10 blur-3xl" />
-        </div>
-
-        {/* Floating Icons (decorative) */}
-        <div className="hidden lg:block absolute inset-0 pointer-events-none">
-          <MapPin className="absolute top-32 left-[12%] w-8 h-8 text-amber-500/40 animate-float" style={{ animationDelay: '0s' }} />
-          <Wrench className="absolute top-48 right-[15%] w-7 h-7 text-amber-600/30 animate-float" style={{ animationDelay: '0.8s' }} />
-          <Star className="absolute bottom-40 left-[18%] w-6 h-6 text-amber-400/50 animate-float" style={{ animationDelay: '1.6s' }} />
-          <Zap className="absolute bottom-52 right-[12%] w-7 h-7 text-amber-500/40 animate-float" style={{ animationDelay: '2.4s' }} />
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10">
-          <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
-            {/* Hero Text */}
-            <div className="flex-1 text-center lg:text-left stagger">
-              <div className="inline-flex items-center gap-2 glass-light px-4 py-2 rounded-full text-sm font-medium text-charcoal/70 mb-6 animate-fade-in-up">
-                <MapPin className="w-4 h-4 text-amber-600" />
-                Serving Ilaro & Surrounding Communities
-              </div>
-
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight mb-6 animate-fade-in-up">
-                <span className="bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 bg-clip-text text-transparent">
-                  Find Trusted Artisans,
-                </span>
-                <br />
-                <span className="text-charcoal">
-                  Right in Your Neighborhood
-                </span>
-              </h1>
-
-              <p className="text-lg sm:text-xl text-charcoal/60 max-w-2xl mx-auto lg:mx-0 mb-8 animate-fade-in-up leading-relaxed">
-                Connect with verified electricians, plumbers, carpenters, and
-                more in Ilaro &mdash; instantly.
+    <div className="overflow-hidden">
+      <section className="border-b border-ink/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 lg:py-20">
+          <div className="grid lg:grid-cols-[minmax(0,1fr)_25rem] items-center gap-10 lg:gap-16">
+            <div className="max-w-3xl animate-fade-in-up">
+              <p className="inline-flex items-center gap-2 rounded-full bg-brand/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-brand">
+                <MapPin className="w-3.5 h-3.5" />
+                Ilaro service network
               </p>
-
-              <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start animate-fade-in-up">
-                <Link
-                  to="/discover"
-                  className="btn-primary inline-flex items-center gap-2 px-8 py-3.5 text-base shadow-lg shadow-amber-500/30 hover:shadow-amber-500/45"
-                >
-                  Find an Artisan
+              <h1 className="font-display mt-5 max-w-3xl text-5xl font-semibold leading-[0.98] text-ink sm:text-6xl lg:text-7xl">
+                Reliable help is closer than it looks.
+              </h1>
+              <p className="mt-6 max-w-2xl text-base leading-8 text-charcoal/70 sm:text-lg">
+                Find local electricians, plumbers, carpenters, and more. Review their work, compare distance, then call with confidence.
+              </p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <Link to="/discover" className="btn-primary gap-2 px-6 py-3.5">
+                  Find an artisan
                   <ChevronRight className="w-5 h-5" />
                 </Link>
-                <Link
-                  to="/register-provider"
-                  className="btn-glass inline-flex items-center gap-2 px-8 py-3.5 text-base"
-                >
-                  Join as an Artisan
+                <Link to="/register-provider" className="btn-glass gap-2 px-6 py-3.5">
+                  List your service
+                  <ArrowUpRight className="w-4 h-4" />
                 </Link>
               </div>
+              <p className="mt-7 flex items-center gap-2 text-sm text-charcoal/65">
+                <ShieldCheck className="h-4 w-4 shrink-0 text-leaf" />
+                See work photos and community reviews before you make contact.
+              </p>
+            </div>
 
-              {/* Trust indicators */}
-              <div className="flex items-center gap-6 mt-8 justify-center lg:justify-start animate-fade-in-up">
-                <div className="flex -space-x-2">
-                  {[...Array(4)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="w-8 h-8 rounded-full border-2 border-white/60 bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-xs text-white font-bold shadow-sm"
-                    >
-                      {String.fromCharCode(65 + i)}
-                    </div>
-                  ))}
+            <aside className="bg-brand p-5 text-white shadow-[0_18px_38px_rgba(8,72,82,0.2)] sm:p-7">
+              <div className="flex items-center justify-between border-b border-white/20 pb-5">
+                <div>
+                  <p className="font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-white/65">Start here</p>
+                  <h2 className="mt-1 font-display text-2xl font-semibold">Find a nearby trade</h2>
                 </div>
-                <p className="text-sm text-charcoal/50">
-                  Trusted by <span className="font-semibold text-charcoal/70">100+</span> locals
-                </p>
+                <MapPin className="h-7 w-7 text-clay" />
               </div>
-            </div>
-
-            {/* Hero Visual - Decorative Glass Cards Stack */}
-            <div className="flex flex-1 justify-center relative mt-8 lg:mt-0">
-              <div className="relative w-72 sm:w-80 h-80 sm:h-96">
-                {/* Back card */}
-                <div className="glass-light absolute top-4 left-4 w-56 sm:w-64 h-64 sm:h-72 rounded-2xl rotate-6 border border-white/20" />
-                {/* Middle card */}
-                <div className="glass absolute top-2 left-2 w-64 sm:w-72 h-72 sm:h-80 rounded-2xl -rotate-3 border border-white/25" />
-                {/* Front card */}
-                <div className="glass-strong relative z-10 w-full h-full rounded-2xl flex flex-col items-center justify-center gap-4 p-8 border border-white/40">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/30">
-                    <MapPin className="w-8 h-8 text-white" />
-                  </div>
-                  <p className="text-charcoal font-semibold text-lg text-center">
-                    Trusted Artisans
-                  </p>
-                  <p className="text-charcoal/50 text-sm text-center">
-                    Just a tap away
-                  </p>
-                  <div className="flex gap-1.5 mt-2">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star
-                        key={star}
-                        className="w-4 h-4 text-amber-500 fill-amber-500"
-                      />
-                    ))}
-                  </div>
-                </div>
+              <Link to="/discover" className="mt-5 flex items-center gap-3 border border-white/25 bg-white/10 px-4 py-3 text-sm font-semibold transition-colors hover:bg-white/16">
+                <Search className="h-4 w-4 text-white/70" />
+                Search every service
+                <ChevronRight className="ml-auto h-4 w-4" />
+              </Link>
+              <div className="mt-5 grid grid-cols-2 gap-px bg-white/20">
+                {categories.slice(0, 4).map((category) => (
+                  <Link
+                    key={category.slug}
+                    to={`/discover?category=${category.slug}`}
+                    className="group flex items-center gap-2 bg-brand px-3 py-3 text-sm font-semibold transition-colors hover:bg-brand-deep"
+                  >
+                    <TradeIcon category={category.name} className="h-4 w-4 text-clay" />
+                    <span className="truncate">{category.name}</span>
+                  </Link>
+                ))}
               </div>
-            </div>
-          </div>
-        </div>
-
-      </section>
-
-      {/* ===== STATS BAR (overlaps hero) ===== */}
-      <section className="relative z-20 -mt-8 md:-mt-12">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="glass-strong rounded-3xl p-2 grid grid-cols-3 divide-x divide-white/40">
-            <div className="px-3 py-5 sm:py-6 text-center">
-              <p className="text-2xl sm:text-4xl font-extrabold text-amber-600">30+</p>
-              <p className="text-xs sm:text-sm text-charcoal/60 mt-1">Local Artisans</p>
-            </div>
-            <div className="px-3 py-5 sm:py-6 text-center">
-              <p className="text-2xl sm:text-4xl font-extrabold text-amber-600">10</p>
-              <p className="text-xs sm:text-sm text-charcoal/60 mt-1">Service Categories</p>
-            </div>
-            <div className="px-3 py-5 sm:py-6 text-center">
-              <p className="text-2xl sm:text-4xl font-extrabold text-amber-600">5km</p>
-              <p className="text-xs sm:text-sm text-charcoal/60 mt-1">Coverage Radius</p>
-            </div>
+              <p className="mt-5 border-t border-white/20 pt-4 text-sm leading-6 text-white/70">
+                Browse by location, category, or the job you need done.
+              </p>
+            </aside>
           </div>
         </div>
       </section>
 
-      {/* ===== HOW IT WORKS ===== */}
-      <section className="py-12 md:py-16">
+      <section className="border-b border-ink/10 bg-white/45">
+        <div className="max-w-7xl mx-auto grid grid-cols-3 divide-x divide-ink/10 px-4 sm:px-6 lg:px-8">
+          <div className="py-6 text-center sm:py-8">
+            <p className="font-display text-3xl font-semibold text-clay sm:text-4xl">30+</p>
+            <p className="mt-1 text-xs font-semibold text-charcoal/60 sm:text-sm">Local artisans</p>
+          </div>
+          <div className="py-6 text-center sm:py-8">
+            <p className="font-display text-3xl font-semibold text-clay sm:text-4xl">10</p>
+            <p className="mt-1 text-xs font-semibold text-charcoal/60 sm:text-sm">Service categories</p>
+          </div>
+          <div className="py-6 text-center sm:py-8">
+            <p className="font-display text-3xl font-semibold text-clay sm:text-4xl">5 km</p>
+            <p className="mt-1 text-xs font-semibold text-charcoal/60 sm:text-sm">Coverage radius</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-14 md:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-10 stagger">
-            <p className="text-amber-600 font-semibold text-sm uppercase tracking-widest">
-              Simple Process
-            </p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-charcoal mt-3">
-              How It Works
-            </h2>
-            <p className="text-charcoal/60 mt-3 max-w-xl mx-auto">
-              Finding the right artisan has never been easier. Just three simple
-              steps.
-            </p>
+          <div className="max-w-2xl">
+            <p className="font-mono text-xs font-medium uppercase tracking-[0.14em] text-clay">A direct route</p>
+            <h2 className="font-display mt-3 text-3xl font-semibold text-ink sm:text-4xl">Get help without the guesswork.</h2>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 stagger">
-            {steps.map((step, idx) => {
+          <div className="mt-10 grid border-t border-ink/15 md:grid-cols-3">
+            {steps.map((step) => {
               const Icon = step.icon;
               return (
-                <div
-                  key={step.title}
-                  className="glass rounded-2xl p-8 relative transition-all duration-300 hover:translate-y-[-4px] hover:shadow-xl"
-                >
-                  {/* Step Number */}
-                  <span className="absolute top-4 right-6 text-5xl font-black text-amber-500/10 select-none">
-                    {step.number}
-                  </span>
-
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 flex items-center justify-center mb-5">
-                    <Icon className="w-7 h-7 text-amber-600" />
+                <div key={step.title} className="border-b border-ink/15 py-7 pr-6 md:border-b-0 md:border-r md:px-7 md:first:pl-0 md:last:border-r-0 md:last:pr-0">
+                  <div className="flex items-center justify-between">
+                    <Icon className="h-6 w-6 text-brand" />
+                    <span className="font-mono text-xs font-medium text-clay">{step.number}</span>
                   </div>
-
-                  <h3 className="text-xl font-bold text-charcoal mb-3">
-                    {step.title}
-                  </h3>
-                  <p className="text-charcoal/60 text-sm leading-relaxed">
-                    {step.description}
-                  </p>
-
-                  {/* Connector line (desktop) */}
-                  {idx < steps.length - 1 && (
-                    <div className="hidden md:block absolute top-1/2 -right-3 w-6 h-0.5 bg-gradient-to-r from-amber-400/40 to-transparent" />
-                  )}
+                  <h3 className="mt-6 text-lg font-bold text-ink">{step.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-charcoal/65">{step.description}</p>
                 </div>
               );
             })}
@@ -257,110 +182,74 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ===== FEATURES SECTION ===== */}
-      <section className="py-12 md:py-16">
+      <section className="border-y border-ink/10 bg-white/50 py-14 md:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-10 stagger">
-            <p className="text-amber-600 font-semibold text-sm uppercase tracking-widest">
-              Why Choose Us
-            </p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-charcoal mt-3">
-              Everything You Need
-            </h2>
-            <p className="text-charcoal/60 mt-3 max-w-xl mx-auto">
-              Built from the ground up to make finding help effortless.
-            </p>
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+            <div className="max-w-2xl">
+              <p className="font-mono text-xs font-medium uppercase tracking-[0.14em] text-brand">Browse by trade</p>
+              <h2 className="font-display mt-3 text-3xl font-semibold text-ink sm:text-4xl">The right hands for every job.</h2>
+            </div>
+            <Link to="/discover" className="inline-flex items-center gap-1.5 text-sm font-bold text-brand hover:text-brand-deep">
+              View all services
+              <ArrowUpRight className="h-4 w-4" />
+            </Link>
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 stagger">
-            {features.map((feature) => {
-              const Icon = feature.icon;
-              return (
-                <div
-                  key={feature.title}
-                  className="glass rounded-2xl p-6 transition-all duration-300 hover:translate-y-[-4px] hover:shadow-xl"
-                >
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-500/20 to-teal-600/10 flex items-center justify-center mb-4">
-                    <Icon className="w-6 h-6 text-teal-600" />
-                  </div>
-                  <h3 className="text-lg font-bold text-charcoal mb-2">
-                    {feature.title}
-                  </h3>
-                  <p className="text-charcoal/60 text-sm leading-relaxed">
-                    {feature.description}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* ===== CATEGORIES SHOWCASE ===== */}
-      <section className="py-12 md:py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-10 stagger">
-            <p className="text-amber-600 font-semibold text-sm uppercase tracking-widest">
-              Browse by Trade
-            </p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-charcoal mt-3">
-              Service Categories
-            </h2>
-            <p className="text-charcoal/60 mt-3 max-w-xl mx-auto">
-              From electrical work to solar installations &mdash; find the right
-              expert for every job.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4 stagger">
-            {categories.map((cat) => (
+          <div className="mt-10 grid grid-cols-1 gap-px border border-ink/15 bg-ink/15 sm:grid-cols-2 lg:grid-cols-3">
+            {categories.map((category) => (
               <Link
-                key={cat.name}
-                to={`/discover?category=${cat.name.toLowerCase().replace(/\s+/g, '-')}`}
-                className="glass rounded-2xl p-5 sm:p-6 flex flex-col items-center gap-3 transition-all duration-300 hover:translate-y-[-4px] hover:shadow-xl group"
+                key={category.slug}
+                to={`/discover?category=${category.slug}`}
+                className="group flex items-center gap-4 bg-[#fffefa] px-5 py-4 transition-colors hover:bg-[#eaf2ef]"
               >
-                <span className="text-3xl sm:text-4xl group-hover:scale-110 transition-transform duration-300">
-                  {cat.icon}
+                <span className="flex h-10 w-10 items-center justify-center border border-brand/20 bg-brand/8 text-brand transition-colors group-hover:bg-brand group-hover:text-white">
+                  <TradeIcon category={category.name} className="h-5 w-5" />
                 </span>
-                <span className="text-sm sm:text-base font-semibold text-charcoal text-center">
-                  {cat.name}
-                </span>
+                <span className="font-semibold text-ink">{category.name}</span>
+                <ChevronRight className="ml-auto h-4 w-4 text-charcoal/35 transition-transform group-hover:translate-x-1 group-hover:text-brand" />
               </Link>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ===== CTA BANNER ===== */}
-      <section className="py-12 md:py-16">
+      <section className="py-14 md:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="glass rounded-3xl p-10 sm:p-14 md:p-20 text-center relative overflow-hidden">
-            {/* Decorative circles */}
-            <div className="absolute -top-20 -right-20 w-52 h-52 rounded-full bg-amber-400/10 blur-2xl" />
-            <div className="absolute -bottom-20 -left-20 w-52 h-52 rounded-full bg-teal-400/10 blur-2xl" />
-
-            <div className="relative z-10 stagger">
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-charcoal mb-4">
-                Ready to find your artisan?
-              </h2>
-              <p className="text-charcoal/60 text-lg mb-8 max-w-lg mx-auto">
-                Join hundreds of people in Ilaro who have found their perfect
-                service provider.
-              </p>
-              <Link
-                to="/discover"
-                className="btn-primary inline-flex items-center gap-2 px-10 py-4 text-lg shadow-lg shadow-amber-500/30 hover:shadow-amber-500/45"
-              >
-                Get Started Now
-                <ChevronRight className="w-5 h-5" />
+          <div className="grid border border-ink/15 bg-ink text-white lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+            <div className="p-7 sm:p-10">
+              <p className="font-mono text-xs font-medium uppercase tracking-[0.14em] text-clay">Built for the neighborhood</p>
+              <h2 className="font-display mt-3 max-w-xl text-3xl font-semibold sm:text-4xl">Need a local expert today?</h2>
+              <p className="mt-3 max-w-xl text-sm leading-7 text-white/70 sm:text-base">Explore nearby artisans, see evidence of their work, and reach out when you are ready.</p>
+            </div>
+            <div className="border-t border-white/15 p-7 lg:border-l lg:border-t-0 lg:p-10">
+              <Link to="/discover" className="inline-flex items-center gap-2 border border-white/25 bg-white px-5 py-3 text-sm font-bold text-ink transition-colors hover:bg-[#eaf2ef]">
+                Start your search
+                <ChevronRight className="h-4 w-4" />
               </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Bottom spacer for the fixed navbar */}
-      <div className="h-4" />
+      <section className="border-t border-ink/10 py-14 md:py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl">
+            <p className="font-mono text-xs font-medium uppercase tracking-[0.14em] text-leaf">Built for confidence</p>
+            <h2 className="font-display mt-3 text-3xl font-semibold text-ink sm:text-4xl">Enough detail to choose well.</h2>
+          </div>
+          <div className="mt-10 grid gap-px border border-ink/15 bg-ink/15 sm:grid-cols-2 lg:grid-cols-4">
+            {features.map((feature) => {
+              const Icon = feature.icon;
+              return (
+                <div key={feature.title} className="bg-[#f5f6f1] p-6">
+                  <Icon className="h-6 w-6 text-leaf" />
+                  <h3 className="mt-8 text-base font-bold text-ink">{feature.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-charcoal/65">{feature.description}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
