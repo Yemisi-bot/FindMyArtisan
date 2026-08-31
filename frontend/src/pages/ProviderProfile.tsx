@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { MapPin, Phone, Shield, Clock, ArrowLeft, MessageSquare, Star, Share2, Images, ImagePlus, X, Check } from 'lucide-react';
+import { MapPin, Phone, ShieldCheck, Clock, ArrowLeft, MessageSquare, MessageCircle, Star, Share2, Images, ImagePlus, X, Check } from 'lucide-react';
 import { providersApi, reviewsApi, assetUrl } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import StarRating from '../components/StarRating';
+import TradeIcon from '../components/TradeIcon';
 import type { ServiceProvider, Review } from '../types';
 
 interface WorkImage {
@@ -202,30 +203,30 @@ export default function ProviderProfile() {
       {/* Back button */}
       <Link
         to="/discover"
-        className="inline-flex items-center gap-2 text-charcoal/60 hover:text-charcoal transition-colors mb-6"
+        className="inline-flex items-center gap-2 text-charcoal/65 hover:text-brand transition-colors mb-6"
       >
         <ArrowLeft className="w-4 h-4" />
         <span className="font-medium">Back to Discover</span>
       </Link>
 
       {/* Provider Header Card */}
-      <div className="glass-strong p-8 animate-fade-in-up">
+      <section className="glass-strong p-5 sm:p-8 animate-fade-in-up">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
           <div className="flex-1">
             {/* Category badge */}
-            <div className="inline-flex items-center gap-2 glass-light px-3 py-1.5 rounded-full text-sm font-medium text-charcoal/70 mb-4">
-              <span>{provider.category_icon}</span>
+            <div className="inline-flex items-center gap-2 rounded-full border border-brand/15 bg-brand/8 px-3 py-1.5 text-sm font-bold text-brand mb-4">
+              <TradeIcon category={provider.category_name} className="h-4 w-4" />
               <span>{provider.category_name}</span>
             </div>
 
             {/* Business name and verified badge */}
             <div className="flex items-center gap-3 flex-wrap mb-3">
-              <h1 className="text-3xl sm:text-4xl font-bold text-charcoal">
+              <h1 className="font-display text-3xl sm:text-4xl font-semibold text-ink">
                 {provider.business_name}
               </h1>
               {provider.is_verified && (
-                <span className="inline-flex items-center gap-1 text-xs font-semibold bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full border border-emerald-200">
-                  <Shield className="w-3.5 h-3.5" />
+                <span className="inline-flex items-center gap-1 rounded-full bg-leaf/10 px-2.5 py-1 text-xs font-bold text-leaf">
+                  <ShieldCheck className="w-3.5 h-3.5" />
                   Verified
                 </span>
               )}
@@ -233,15 +234,15 @@ export default function ProviderProfile() {
 
             {/* Star rating display */}
             <div className="flex items-center gap-2 mb-4">
-              <StarRating rating={Math.round(Number(provider.average_rating))} size="md" />
-              <span className="font-semibold text-charcoal">
+              <StarRating rating={Number(provider.average_rating)} size="md" />
+              <span className="font-bold text-ink">
                 {Number(provider.average_rating).toFixed(1)}
               </span>
               <span className="text-charcoal/50 text-sm">
                 ({provider.review_count} {provider.review_count === 1 ? 'review' : 'reviews'})
               </span>
               {provider.distance_km !== undefined && provider.distance_km !== null && (
-                <span className="ml-2 glass-light px-2.5 py-1 rounded-full text-xs font-medium text-charcoal/60">
+                <span className="ml-2 rounded-full bg-brand/8 px-2.5 py-1 text-xs font-bold text-brand">
                   {provider.distance_km.toFixed(1)} km away
                 </span>
               )}
@@ -249,7 +250,7 @@ export default function ProviderProfile() {
 
             {/* Description */}
             {provider.description && (
-              <p className="text-charcoal/70 leading-relaxed mb-5 max-w-2xl">
+              <p className="text-charcoal/70 leading-7 mb-5 max-w-2xl">
                 {provider.description}
               </p>
             )}
@@ -261,9 +262,9 @@ export default function ProviderProfile() {
                   href={`https://maps.google.com/?q=${encodeURIComponent(provider.address)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-charcoal/60 hover:text-amber-600 transition-colors"
+                  className="inline-flex items-center gap-2 text-charcoal/65 hover:text-brand transition-colors"
                 >
-                  <MapPin className="w-4 h-4 text-amber-500" />
+                  <MapPin className="w-4 h-4 text-brand" />
                   <span>{provider.address}</span>
                 </a>
               )}
@@ -271,7 +272,7 @@ export default function ProviderProfile() {
                 <button
                   onClick={handleRevealContact}
                   disabled={revealing}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 disabled:opacity-60 transition-all shadow-md"
+                  className="btn-primary gap-2 px-4 py-2 text-sm disabled:pointer-events-none disabled:opacity-60"
                 >
                   <Phone className="w-4 h-4" />
                   {revealing ? 'Revealing...' : isAuthenticated ? 'Reveal Phone Number' : 'Log in to see number'}
@@ -281,7 +282,7 @@ export default function ProviderProfile() {
                 <div className="space-y-2">
                   <a
                     href={`tel:${provider.phone}`}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 transition-all shadow-md"
+                    className="btn-primary gap-2 px-4 py-2 text-sm"
                   >
                     <Phone className="w-4 h-4" />
                     Call {provider.phone}
@@ -290,9 +291,9 @@ export default function ProviderProfile() {
                     href={`https://wa.me/${provider.phone.replace(/[^0-9]/g, '')}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 transition-all shadow-md"
+                    className="inline-flex items-center gap-2 rounded-lg border border-leaf bg-leaf px-4 py-2 text-sm font-bold text-white shadow-[0_3px_0_#235943] transition-colors hover:bg-[#28684f]"
                   >
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                    <MessageCircle className="w-4 h-4" />
                     WhatsApp
                   </a>
                 </div>
@@ -306,7 +307,7 @@ export default function ProviderProfile() {
               <img
                 src={provider.profile_image}
                 alt={provider.business_name}
-                className="w-32 h-32 sm:w-40 sm:h-40 rounded-2xl object-cover border-2 border-white/40 shadow-lg"
+                className="w-32 h-32 sm:w-40 sm:h-40 rounded-lg object-cover border border-ink/10 shadow-[0_10px_22px_rgba(21,50,58,0.12)]"
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.display = 'none';
                 }}
@@ -316,27 +317,27 @@ export default function ProviderProfile() {
         </div>
 
         {/* Meta info + share */}
-        <div className="flex items-center justify-between mt-6 pt-6 border-t border-white/20">
+        <div className="flex items-center justify-between mt-6 pt-6 border-t border-ink/10">
           <div className="flex items-center gap-2 text-xs text-charcoal/40">
             <Clock className="w-3.5 h-3.5" />
             <span>Member since {formatDate(provider.created_at)}</span>
           </div>
           <button
             onClick={handleShare}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-charcoal/70 glass-light hover:bg-white/50 transition-all"
+            className="inline-flex items-center gap-2 rounded-lg border border-ink/10 bg-surface px-4 py-2 text-sm font-bold text-charcoal/70 hover:border-brand/40 hover:text-brand transition-colors"
           >
-            {shared ? <Check className="w-4 h-4 text-green-600" /> : <Share2 className="w-4 h-4" />}
+            {shared ? <Check className="w-4 h-4 text-leaf" /> : <Share2 className="w-4 h-4" />}
             {shared ? 'Link copied!' : 'Share'}
           </button>
         </div>
-      </div>
+      </section>
 
       {/* Work Catalog / Gallery */}
       {provider.work_images && provider.work_images.length > 0 && (
-        <div className="glass mt-6 p-6 animate-fade-in-up">
+        <section className="glass mt-6 p-5 sm:p-6 animate-fade-in-up">
           <div className="flex items-center gap-2 mb-6">
-            <Images className="w-5 h-5 text-amber-500" />
-            <h2 className="text-xl font-bold text-charcoal">Work Catalog</h2>
+            <Images className="w-5 h-5 text-brand" />
+            <h2 className="font-display text-2xl font-semibold text-ink">Work catalog</h2>
             <span className="text-sm text-charcoal/50">({provider.work_images.length} photos)</span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -344,7 +345,7 @@ export default function ProviderProfile() {
               <button
                 key={img.id}
                 onClick={() => setLightboxImage(assetUrl(img.image_url))}
-                className="rounded-xl overflow-hidden aspect-[4/3] bg-gray-100 hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-amber-400"
+                className="overflow-hidden rounded-lg border border-ink/10 aspect-[4/3] bg-surface-muted transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-brand"
               >
                 <img
                   src={assetUrl(img.image_url)}
@@ -355,7 +356,7 @@ export default function ProviderProfile() {
               </button>
             ))}
           </div>
-        </div>
+        </section>
       )}
 
       {/* Lightbox */}
@@ -367,19 +368,20 @@ export default function ProviderProfile() {
           <button
             className="absolute top-4 right-4 p-2 rounded-full bg-white/20 text-white hover:bg-white/30"
             onClick={() => setLightboxImage(null)}
+            aria-label="Close image preview"
           >
             <X className="w-6 h-6" />
           </button>
-          <img src={lightboxImage} alt="Work sample" className="max-w-full max-h-full rounded-xl shadow-2xl" />
+          <img src={lightboxImage} alt="Work sample" className="max-w-full max-h-full rounded-lg shadow-2xl" />
         </div>
       )}
 
       {/* Reviews Section */}
-      <div className="glass mt-6 p-6 animate-fade-in-up">
+      <section className="glass mt-6 p-5 sm:p-6 animate-fade-in-up">
         <div className="flex items-center gap-2 mb-6">
-          <MessageSquare className="w-5 h-5 text-amber-500" />
-          <h2 className="text-xl font-bold text-charcoal">
-            Community Reviews
+          <MessageSquare className="w-5 h-5 text-brand" />
+          <h2 className="font-display text-2xl font-semibold text-ink">
+            Community reviews
           </h2>
           <span className="text-sm text-charcoal/50">
             ({provider.review_count})
@@ -388,19 +390,19 @@ export default function ProviderProfile() {
 
         {/* Review requires prior contact */}
         {isAuthenticated && !hasReviewed && !contactRevealed && (
-          <div className="mb-6 px-4 py-3 glass-light rounded-xl text-sm text-charcoal/60">
+          <div className="mb-6 border-l-4 border-clay bg-amber-50 px-4 py-3 text-sm leading-6 text-charcoal/65">
             Reviews are reserved for people who have contacted this artisan. Reveal their phone
-            number above first — then come back anytime to share your experience.
+            number above first, then come back anytime to share your experience.
           </div>
         )}
 
         {/* Review Form */}
         {isAuthenticated && !hasReviewed && contactRevealed && (
-          <form onSubmit={handleReviewSubmit} className="mb-8 p-5 glass-light rounded-xl">
-            <h3 className="font-semibold text-charcoal mb-3">Write a Review</h3>
+          <form onSubmit={handleReviewSubmit} className="mb-8 border border-ink/10 bg-surface-muted p-5 rounded-lg">
+            <h3 className="font-display text-xl font-semibold text-ink mb-3">Write a review</h3>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-charcoal/70 mb-2">
+              <label className="block text-sm font-bold text-charcoal/70 mb-2">
                 Your Rating
               </label>
               <StarRating
@@ -412,7 +414,7 @@ export default function ProviderProfile() {
             </div>
 
             <div className="mb-4">
-              <label htmlFor="reviewComment" className="block text-sm font-medium text-charcoal/70 mb-2">
+              <label htmlFor="reviewComment" className="block text-sm font-bold text-charcoal/70 mb-2">
                 Your Comment
               </label>
               <textarea
@@ -428,15 +430,15 @@ export default function ProviderProfile() {
 
             {/* Optional proof-of-work photo */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-charcoal/70 mb-2">
-                Photo of the work (optional — great proof for others)
+              <label className="block text-sm font-bold text-charcoal/70 mb-2">
+                Photo of the work (optional, useful proof for others)
               </label>
               {reviewImage ? (
                 <div className="flex items-center gap-3">
                   <img
                     src={URL.createObjectURL(reviewImage)}
                     alt="Preview"
-                    className="w-20 h-20 rounded-lg object-cover"
+                    className="w-20 h-20 rounded-lg border border-ink/10 object-cover"
                   />
                   <button
                     type="button"
@@ -447,7 +449,7 @@ export default function ProviderProfile() {
                   </button>
                 </div>
               ) : (
-                <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-charcoal/70 glass-light hover:bg-white/50 cursor-pointer transition-all">
+                <label className="inline-flex items-center gap-2 rounded-lg border border-ink/10 bg-surface px-4 py-2.5 text-sm font-bold text-charcoal/70 hover:border-brand/40 hover:text-brand cursor-pointer transition-colors">
                   <ImagePlus className="w-4 h-4" />
                   Add a photo
                   <input
@@ -464,7 +466,7 @@ export default function ProviderProfile() {
               <div
                 className={`mb-4 px-4 py-3 rounded-lg text-sm animate-fade-in ${
                   reviewMessage.type === 'success'
-                    ? 'bg-green-50 border border-green-200 text-green-700'
+                    ? 'bg-teal-50 border border-teal-100 text-leaf'
                     : 'bg-red-50 border border-red-200 text-red-700'
                 }`}
               >
@@ -494,7 +496,7 @@ export default function ProviderProfile() {
 
         {/* Already reviewed notice */}
         {isAuthenticated && hasReviewed && (
-          <div className="mb-6 px-4 py-3 glass-light rounded-xl text-sm text-charcoal/60">
+          <div className="mb-6 border-l-4 border-leaf bg-teal-50 px-4 py-3 text-sm text-charcoal/65">
             You have already reviewed this provider.
           </div>
         )}
@@ -508,14 +510,14 @@ export default function ProviderProfile() {
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="divide-y divide-ink/10">
             {reviews.map((review) => (
-              <div key={review.id} className="glass-light p-5 rounded-xl">
+              <article key={review.id} className="py-5 first:pt-0 last:pb-0">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium text-charcoal">
+                  <span className="font-bold text-ink">
                     {review.reviewer_name}
                   </span>
-                  <span className="text-xs text-charcoal/40">
+                  <span className="font-mono text-[11px] text-charcoal/40">
                     {formatDate(review.created_at)}
                   </span>
                 </div>
@@ -530,7 +532,7 @@ export default function ProviderProfile() {
                 {review.image_url && (
                   <button
                     onClick={() => setLightboxImage(assetUrl(review.image_url))}
-                    className="mt-3 block rounded-lg overflow-hidden hover:opacity-90 transition-opacity"
+                    className="mt-3 block overflow-hidden rounded-lg border border-ink/10 hover:opacity-90 transition-opacity"
                   >
                     <img
                       src={assetUrl(review.image_url)}
@@ -540,11 +542,11 @@ export default function ProviderProfile() {
                     />
                   </button>
                 )}
-              </div>
+              </article>
             ))}
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }
