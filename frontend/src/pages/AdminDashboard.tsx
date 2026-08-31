@@ -8,6 +8,8 @@ import {
 import { useAuth } from '../hooks/useAuth';
 import { adminApi, assetUrl } from '../services/api';
 import type { AdminStats, AdminLog, AdminUser, ServiceProvider, ProviderDetails } from '../types';
+import StarRating from '../components/StarRating';
+import TradeIcon from '../components/TradeIcon';
 
 type Tab = 'overview' | 'users' | 'providers' | 'logs';
 
@@ -151,9 +153,9 @@ export default function AdminDashboard() {
 
   const roleBadge = (role: string) => {
     const map: Record<string, string> = {
-      admin: 'bg-teal-100 text-teal-700',
+      admin: 'bg-brand/10 text-brand',
       provider: 'bg-amber-100 text-amber-700',
-      user: 'bg-charcoal/10 text-charcoal/70',
+      user: 'bg-surface-muted text-charcoal/70',
     };
     return map[role] || map.user;
   };
@@ -169,7 +171,7 @@ export default function AdminDashboard() {
       case 'provider_created':
         return `Created business "${m.businessName ?? 'Unknown'}"`;
       case 'review_submitted':
-        return `Left a ${m.rating ?? '?'}★ review for ${m.providerName ?? 'a provider'}`;
+        return `Left a ${m.rating ?? '?'}-star review for ${m.providerName ?? 'a provider'}`;
       case 'suspend_provider':
         return `Suspended "${m.providerName ?? 'a provider'}"`;
       case 'unsuspend_provider':
@@ -183,42 +185,43 @@ export default function AdminDashboard() {
 
   const actionTone = (action: string): string => {
     if (action.startsWith('suspend') || action === 'delete_review') return 'bg-red-100 text-red-700';
-    if (action.startsWith('unsuspend') || action === 'provider_created') return 'bg-green-100 text-green-700';
-    if (action === 'review_submitted') return 'bg-purple-100 text-purple-700';
-    return 'bg-charcoal/10 text-charcoal/70';
+    if (action.startsWith('unsuspend') || action === 'provider_created') return 'bg-teal-50 text-leaf';
+    if (action === 'review_submitted') return 'bg-brand/10 text-brand';
+    return 'bg-surface-muted text-charcoal/70';
   };
 
   const statCards = stats
     ? [
-        { label: 'Total Users', value: stats.totalUsers, icon: Users, accent: 'from-amber-500/20 to-amber-600/10', color: 'text-amber-600' },
-        { label: 'Total Providers', value: stats.totalProviders, icon: Briefcase, accent: 'from-teal-500/20 to-teal-600/10', color: 'text-teal-600' },
-        { label: 'Live in Search', value: stats.liveProviders, icon: Eye, accent: 'from-green-500/20 to-green-600/10', color: 'text-green-600' },
-        { label: 'Suspended', value: stats.suspendedProviders, icon: Ban, accent: 'from-red-500/20 to-red-600/10', color: 'text-red-500' },
-        { label: 'Total Reviews', value: stats.totalReviews, icon: Star, accent: 'from-purple-500/20 to-purple-600/10', color: 'text-purple-500' },
+        { label: 'Total users', value: stats.totalUsers, icon: Users, tone: 'border-clay/20 bg-clay/8', color: 'text-clay' },
+        { label: 'Total providers', value: stats.totalProviders, icon: Briefcase, tone: 'border-brand/20 bg-brand/8', color: 'text-brand' },
+        { label: 'Live in search', value: stats.liveProviders, icon: Eye, tone: 'border-leaf/20 bg-leaf/8', color: 'text-leaf' },
+        { label: 'Suspended', value: stats.suspendedProviders, icon: Ban, tone: 'border-red-200 bg-red-50', color: 'text-red-600' },
+        { label: 'Total reviews', value: stats.totalReviews, icon: Star, tone: 'border-brand/20 bg-brand/8', color: 'text-brand' },
       ]
     : [];
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="mb-8 animate-fade-in-up">
-        <h1 className="text-3xl font-bold text-charcoal flex items-center gap-3">
-          <Shield className="w-8 h-8 text-amber-500" />
-          Admin Dashboard
+      <div className="mb-8 border-b border-ink/10 pb-6 animate-fade-in-up">
+        <p className="font-mono text-xs font-medium uppercase tracking-[0.12em] text-clay">Control room</p>
+        <h1 className="font-display mt-2 text-3xl font-semibold text-ink flex items-center gap-3">
+          <Shield className="w-7 h-7 text-brand" />
+          Admin dashboard
         </h1>
-        <p className="text-charcoal/60 mt-1">
-          Providers go live automatically — use this panel to monitor and suspend if needed.
+        <p className="text-charcoal/60 mt-2">
+          Providers go live automatically. Monitor activity and intervene when needed.
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-2 mb-8 animate-fade-in-up">
+      <div className="flex flex-wrap gap-1 mb-8 border-b border-ink/10 animate-fade-in-up">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => { setActiveTab(tab.key); setActionMessage(null); }}
-            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+            className={`inline-flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition-colors ${
               activeTab === tab.key
-                ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30'
-                : 'glass text-charcoal/70 hover:text-charcoal hover:bg-white/30'
+                ? 'border-brand text-brand'
+                : 'border-transparent text-charcoal/60 hover:text-charcoal hover:bg-surface-muted'
             }`}
           >
             {tab.icon}
@@ -229,9 +232,9 @@ export default function AdminDashboard() {
 
       {actionMessage && (
         <div
-          className={`mb-6 flex items-center gap-2 px-4 py-3 rounded-xl text-sm animate-fade-in ${
+          className={`mb-6 flex items-center gap-2 px-4 py-3 rounded-lg text-sm animate-fade-in ${
             actionMessage.type === 'success'
-              ? 'bg-green-50 border border-green-200 text-green-700'
+              ? 'bg-teal-50 border border-teal-100 text-leaf'
               : 'bg-red-50 border border-red-200 text-red-700'
           }`}
         >
@@ -250,12 +253,12 @@ export default function AdminDashboard() {
               {statCards.map((c) => {
                 const Icon = c.icon;
                 return (
-                  <div key={c.label} className="glass rounded-2xl p-6 transition-all duration-300 hover:translate-y-[-4px] hover:shadow-xl">
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${c.accent} flex items-center justify-center mb-4`}>
+                  <div key={c.label} className="glass p-5 transition-colors hover:border-brand/35">
+                    <div className={`flex h-10 w-10 items-center justify-center border ${c.tone}`}>
                       <Icon className={`w-6 h-6 ${c.color}`} />
                     </div>
-                    <p className="text-3xl font-bold text-charcoal">{c.value}</p>
-                    <p className="text-sm text-charcoal/60 mt-1">{c.label}</p>
+                    <p className="mt-5 font-display text-3xl font-semibold text-ink">{c.value}</p>
+                    <p className="text-sm font-semibold text-charcoal/60 mt-1">{c.label}</p>
                   </div>
                 );
               })}
@@ -272,17 +275,17 @@ export default function AdminDashboard() {
           {usersLoading ? (
             <div className="flex justify-center py-16"><div className="spinner" /></div>
           ) : users.length === 0 ? (
-            <div className="text-center py-16 glass rounded-2xl">
+            <div className="border border-dashed border-ink/20 bg-surface-muted text-center py-16">
               <Users className="w-16 h-16 text-charcoal/20 mx-auto mb-4" />
               <p className="text-lg font-semibold text-charcoal">No users yet</p>
               <p className="text-charcoal/60 mt-1">Registered accounts will appear here.</p>
             </div>
           ) : (
-            <div className="glass rounded-2xl overflow-hidden">
+            <div className="glass rounded-lg overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-white/20">
+                    <tr className="border-b border-ink/10 bg-surface-muted">
                       <th className="text-left px-6 py-4 font-semibold text-charcoal/70">Name</th>
                       <th className="text-left px-6 py-4 font-semibold text-charcoal/70">Email</th>
                       <th className="text-left px-6 py-4 font-semibold text-charcoal/70">Role</th>
@@ -292,10 +295,10 @@ export default function AdminDashboard() {
                   </thead>
                   <tbody>
                     {users.map((u, idx) => (
-                      <tr key={u.id} className={`border-b border-white/10 hover:bg-white/10 transition-colors ${idx === users.length - 1 ? 'border-b-0' : ''}`}>
+                      <tr key={u.id} className={`border-b border-ink/10 hover:bg-surface-muted transition-colors ${idx === users.length - 1 ? 'border-b-0' : ''}`}>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2.5">
-                            <span className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                            <span className="w-8 h-8 rounded-full bg-brand flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                               {u.full_name?.charAt(0).toUpperCase() || 'U'}
                             </span>
                             <div>
@@ -313,7 +316,7 @@ export default function AdminDashboard() {
                         </td>
                         <td className="px-6 py-4">
                           {u.email_verified ? (
-                            <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700"><BadgeCheck className="w-3.5 h-3.5" /> Verified</span>
+                            <span className="inline-flex items-center gap-1 text-xs font-bold text-leaf"><BadgeCheck className="w-3.5 h-3.5" /> Verified</span>
                           ) : (
                             <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700"><Clock3 className="w-3.5 h-3.5" /> Pending</span>
                           )}
@@ -347,12 +350,12 @@ export default function AdminDashboard() {
                 </button>
 
                 {/* Provider header card */}
-                <div className="glass rounded-2xl p-6">
+                <div className="glass rounded-lg p-6">
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
                     <div>
                       <div className="flex items-center gap-2 mb-2 flex-wrap">
-                        <span className="text-xl">{providerDetail.category_icon}</span>
-                        <h2 className="text-2xl font-bold text-charcoal">{providerDetail.business_name}</h2>
+                        <span className="flex h-9 w-9 items-center justify-center bg-brand/8 text-brand"><TradeIcon category={providerDetail.category_name} className="h-4 w-4" /></span>
+                        <h2 className="font-display text-2xl font-semibold text-ink">{providerDetail.business_name}</h2>
                         {providerDetail.is_suspended ? (
                           <span className="inline-flex items-center gap-1 text-xs font-medium bg-red-100 text-red-700 px-2 py-0.5 rounded-full"><EyeOff className="w-3 h-3" /> Suspended</span>
                         ) : providerDetail.is_visible ? (
@@ -361,7 +364,7 @@ export default function AdminDashboard() {
                           <span className="inline-flex items-center gap-1 text-xs font-medium bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Incomplete</span>
                         )}
                       </div>
-                      <p className="text-sm font-medium text-amber-600 mb-2">{providerDetail.category_name}</p>
+                      <p className="text-sm font-bold text-clay mb-2">{providerDetail.category_name}</p>
                       <div className="text-sm text-charcoal/60 space-y-1">
                         <div className="flex items-center gap-1.5"><User className="w-3.5 h-3.5" /> {providerDetail.provider_name || 'Unknown'}</div>
                         <div className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" /> {providerDetail.provider_email || 'No email'}</div>
@@ -369,7 +372,7 @@ export default function AdminDashboard() {
                         <div className="flex items-center gap-1.5"><PhoneCall className="w-3.5 h-3.5" /> {providerDetail.phone || 'No phone'}</div>
                         <p className="text-xs text-charcoal/40 mt-1">
                           {providerDetail.email_verified ? 'Email verified' : 'Email not verified'} ·{' '}
-                          {providerDetail.image_count}/{providerDetail.images_required} photos · Rating: {Number(providerDetail.average_rating).toFixed(1)}★ ({providerDetail.review_count} reviews) · Joined {formatDate(providerDetail.created_at)}
+                          {providerDetail.image_count}/{providerDetail.images_required} photos · Rating: {Number(providerDetail.average_rating).toFixed(1)} ({providerDetail.review_count} reviews) · Joined {formatDate(providerDetail.created_at)}
                         </p>
                       </div>
                       {providerDetail.description && (
@@ -383,7 +386,7 @@ export default function AdminDashboard() {
                         </button>
                       ) : confirmSuspend === providerDetail.id ? (
                         <div className="flex items-center gap-2">
-                          <button onClick={() => handleSuspend(providerDetail.id, true)} disabled={busyId === providerDetail.id} className="inline-flex items-center gap-1.5 text-sm px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-60" style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)', boxShadow: '0 4px 16px rgba(239,68,68,0.3)' }}>
+                          <button onClick={() => handleSuspend(providerDetail.id, true)} disabled={busyId === providerDetail.id} className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white shadow-[0_3px_0_#b91c1c] hover:bg-red-700 disabled:opacity-60">
                             <Ban className="w-4 h-4" /> Confirm
                           </button>
                           <button onClick={() => setConfirmSuspend(null)} className="btn-glass text-sm px-4 py-2">Cancel</button>
@@ -398,16 +401,16 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Work Images */}
-                <div className="glass rounded-2xl p-6">
+                <div className="glass rounded-lg p-6">
                   <h3 className="text-lg font-bold text-charcoal flex items-center gap-2 mb-4">
-                    <Image className="w-5 h-5 text-amber-500" /> Work Photos ({providerDetail.work_images.length})
+                    <Image className="w-5 h-5 text-brand" /> Work photos ({providerDetail.work_images.length})
                   </h3>
                   {providerDetail.work_images.length === 0 ? (
                     <p className="text-sm text-charcoal/50">No work photos uploaded yet.</p>
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                       {providerDetail.work_images.map((img) => (
-                        <div key={img.id} className="relative group rounded-xl overflow-hidden bg-gray-100 aspect-square">
+                        <div key={img.id} className="relative group rounded-lg overflow-hidden border border-ink/10 bg-surface-muted aspect-square">
                           <img src={assetUrl(img.image_url)} alt={img.caption || 'Work photo'} className="w-full h-full object-cover" />
                           {img.caption && (
                             <div className="absolute bottom-0 inset-x-0 bg-black/50 text-white text-xs px-2 py-1 truncate">{img.caption}</div>
@@ -419,29 +422,27 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Reviews */}
-                <div className="glass rounded-2xl p-6">
+                <div className="glass rounded-lg p-6">
                   <h3 className="text-lg font-bold text-charcoal flex items-center gap-2 mb-4">
-                    <MessageSquare className="w-5 h-5 text-amber-500" /> Reviews ({providerDetail.reviews.length})
+                    <MessageSquare className="w-5 h-5 text-brand" /> Reviews ({providerDetail.reviews.length})
                   </h3>
                   {providerDetail.reviews.length === 0 ? (
                     <p className="text-sm text-charcoal/50">No reviews yet.</p>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="divide-y divide-ink/10">
                       {providerDetail.reviews.map((rev) => (
-                        <div key={rev.id} className="border border-white/20 rounded-xl p-4">
+                        <div key={rev.id} className="py-4 first:pt-0 last:pb-0">
                           <div className="flex items-start justify-between gap-3">
                             <div>
                               <div className="flex items-center gap-2 mb-1">
-                                <span className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-xs font-bold">
+                                <span className="w-7 h-7 rounded-full bg-brand flex items-center justify-center text-white text-xs font-bold">
                                   {rev.reviewer_name?.charAt(0).toUpperCase() || '?'}
                                 </span>
                                 <span className="font-medium text-charcoal text-sm">{rev.reviewer_name}</span>
                                 <span className="text-xs text-charcoal/40">{rev.reviewer_email}</span>
                               </div>
                               <div className="flex items-center gap-1 mb-1">
-                                {[1,2,3,4,5].map((s) => (
-                                  <span key={s} style={{ color: s <= rev.rating ? '#f59e0b' : '#d1d5db', fontSize: '0.875rem' }}>★</span>
-                                ))}
+                                <StarRating rating={rev.rating} size="sm" />
                                 <span className="text-xs text-charcoal/50 ml-1">{formatDate(rev.created_at)}</span>
                               </div>
                               {rev.comment && <p className="text-sm text-charcoal/70">{rev.comment}</p>}
@@ -457,9 +458,9 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Contacts (who revealed the number) */}
-                <div className="glass rounded-2xl p-6">
+                <div className="glass rounded-lg p-6">
                   <h3 className="text-lg font-bold text-charcoal flex items-center gap-2 mb-4">
-                    <PhoneCall className="w-5 h-5 text-amber-500" /> People Who Contacted ({providerDetail.contacts.length})
+                    <PhoneCall className="w-5 h-5 text-brand" /> People who contacted ({providerDetail.contacts.length})
                   </h3>
                   {providerDetail.contacts.length === 0 ? (
                     <p className="text-sm text-charcoal/50">No one has viewed this artisan's phone number yet.</p>
@@ -467,7 +468,7 @@ export default function AdminDashboard() {
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
-                          <tr className="border-b border-white/20">
+                          <tr className="border-b border-ink/10">
                             <th className="text-left px-4 py-3 font-semibold text-charcoal/70">User</th>
                             <th className="text-left px-4 py-3 font-semibold text-charcoal/70">Email</th>
                             <th className="text-left px-4 py-3 font-semibold text-charcoal/70">Phone</th>
@@ -476,10 +477,10 @@ export default function AdminDashboard() {
                         </thead>
                         <tbody>
                           {providerDetail.contacts.map((c, idx) => (
-                            <tr key={c.id} className={`border-b border-white/10 hover:bg-white/10 transition-colors ${idx === providerDetail.contacts.length - 1 ? 'border-b-0' : ''}`}>
+                            <tr key={c.id} className={`border-b border-ink/10 hover:bg-surface-muted transition-colors ${idx === providerDetail.contacts.length - 1 ? 'border-b-0' : ''}`}>
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-2">
-                                  <span className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-xs font-bold">
+                                  <span className="w-7 h-7 rounded-full bg-brand flex items-center justify-center text-white text-xs font-bold">
                                     {c.user_name?.charAt(0).toUpperCase() || '?'}
                                   </span>
                                   <span className="font-medium text-charcoal">{c.user_name}</span>
@@ -502,7 +503,7 @@ export default function AdminDashboard() {
             providersLoading ? (
               <div className="flex justify-center py-16"><div className="spinner" /></div>
             ) : providers.length === 0 ? (
-              <div className="text-center py-16 glass rounded-2xl">
+              <div className="border border-dashed border-ink/20 bg-surface-muted text-center py-16">
                 <Store className="w-16 h-16 text-charcoal/20 mx-auto mb-4" />
                 <p className="text-lg font-semibold text-charcoal">No providers yet</p>
                 <p className="text-charcoal/60 mt-1">Registered artisans will appear here.</p>
@@ -516,13 +517,13 @@ export default function AdminDashboard() {
                     <div
                       key={provider.id}
                       onClick={() => openProviderDetail(provider.id)}
-                      className="glass rounded-2xl p-6 transition-all duration-300 hover:shadow-xl cursor-pointer hover:ring-2 hover:ring-amber-400/30"
+                      className="glass p-6 transition-colors cursor-pointer hover:border-brand/50 hover:shadow-[0_12px_24px_rgba(21,50,58,0.1)]"
                     >
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2 flex-wrap">
-                            <span className="text-lg">{provider.category_icon}</span>
-                            <h3 className="text-lg font-bold text-charcoal">{provider.business_name}</h3>
+                            <span className="flex h-8 w-8 items-center justify-center bg-brand/8 text-brand"><TradeIcon category={provider.category_name} className="h-4 w-4" /></span>
+                            <h3 className="font-display text-xl font-semibold text-ink">{provider.business_name}</h3>
                             {suspended ? (
                               <span className="inline-flex items-center gap-1 text-xs font-medium bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
                                 <EyeOff className="w-3 h-3" /> Suspended
@@ -537,7 +538,7 @@ export default function AdminDashboard() {
                               </span>
                             )}
                           </div>
-                          <p className="text-sm font-medium text-amber-600 mb-2">{provider.category_name}</p>
+                          <p className="text-sm font-bold text-clay mb-2">{provider.category_name}</p>
                           <div className="text-sm text-charcoal/60 space-y-0.5">
                             {provider.provider_name && <p>{provider.provider_name} · {provider.provider_email}</p>}
                             {provider.address && <p>{provider.address}</p>}
@@ -564,8 +565,7 @@ export default function AdminDashboard() {
                               <button
                                 onClick={() => handleSuspend(provider.id, true)}
                                 disabled={busyId === provider.id}
-                                className="inline-flex items-center gap-1.5 text-sm px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-60"
-                                style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)', boxShadow: '0 4px 16px rgba(239,68,68,0.3)' }}
+                                className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white shadow-[0_3px_0_#b91c1c] hover:bg-red-700 disabled:opacity-60"
                               >
                                 <Ban className="w-4 h-4" />
                                 Confirm
@@ -600,17 +600,17 @@ export default function AdminDashboard() {
           {logsLoading ? (
             <div className="flex justify-center py-16"><div className="spinner" /></div>
           ) : logs.length === 0 ? (
-            <div className="text-center py-16 glass rounded-2xl">
+            <div className="border border-dashed border-ink/20 bg-surface-muted text-center py-16">
               <Activity className="w-16 h-16 text-charcoal/20 mx-auto mb-4" />
               <p className="text-lg font-semibold text-charcoal">No activity yet</p>
               <p className="text-charcoal/60 mt-1">Signups, new businesses, reviews and moderation will appear here.</p>
             </div>
           ) : (
-            <div className="glass rounded-2xl overflow-hidden">
+            <div className="glass rounded-lg overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-white/20">
+                    <tr className="border-b border-ink/10 bg-surface-muted">
                       <th className="text-left px-6 py-4 font-semibold text-charcoal/70">Who</th>
                       <th className="text-left px-6 py-4 font-semibold text-charcoal/70">Activity</th>
                       <th className="text-left px-6 py-4 font-semibold text-charcoal/70">Type</th>
@@ -619,10 +619,10 @@ export default function AdminDashboard() {
                   </thead>
                   <tbody>
                     {logs.map((log, idx) => (
-                      <tr key={log.id} className={`border-b border-white/10 transition-colors hover:bg-white/10 ${idx === logs.length - 1 ? 'border-b-0' : ''}`}>
+                      <tr key={log.id} className={`border-b border-ink/10 transition-colors hover:bg-surface-muted ${idx === logs.length - 1 ? 'border-b-0' : ''}`}>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
-                            <span className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                            <span className="w-7 h-7 rounded-full bg-brand flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                               {log.admin_name?.charAt(0).toUpperCase() || 'S'}
                             </span>
                             <span className="text-charcoal font-medium whitespace-nowrap">{log.admin_name}</span>
