@@ -112,8 +112,10 @@ export function deleteUploadedFile(imageUrl?: string | null): void {
   if (imageUrl.includes('res.cloudinary.com')) {
     const publicId = cloudinaryPublicId(imageUrl);
     if (!publicId) return;
+    // invalidate:true also purges cached copies from the CDN. Without it the
+    // asset is removed from storage but keeps serving from edge caches.
     cloudinary.uploader
-      .destroy(publicId)
+      .destroy(publicId, { invalidate: true })
       .catch((err) => console.error('[Upload] Cloudinary delete failed:', err?.message ?? err));
   }
   // Any other absolute URL is external — never touch it.
