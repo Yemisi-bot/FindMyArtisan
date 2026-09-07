@@ -2,7 +2,7 @@ import { Router, Response } from 'express';
 import { query } from '../config/database';
 import { authenticate } from '../middleware/auth';
 import { AuthRequest } from '../types';
-import { imageUpload, publicUrl } from '../middleware/upload';
+import { imageUpload, uploadImage } from '../middleware/upload';
 import { logActivity } from '../services/activity';
 
 const router = Router();
@@ -56,13 +56,16 @@ router.post('/', authenticate, imageUpload.single('image'), async (req: AuthRequ
       return;
     }
 
+    // Push the proof-of-work photo to storage before recording the review
+    const imageUrl = imageFile ? await uploadImage(imageFile) : null;
+
     // Try to insert review (unique constraint prevents duplicates)
     try {
       const result = await query(
         `INSERT INTO reviews (provider_id, user_id, rating, comment, image_url)
          VALUES ($1, $2, $3, $4, $5)
          RETURNING id, rating, comment, image_url, created_at`,
-        [providerId, userId, rating, comment || null, imageFile ? publicUrl(imageFile.filename) : null]
+        [providerId, userId, rating, comment || null, imageUrl]
       );
 
       // Update provider aggregate rating
