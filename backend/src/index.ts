@@ -16,7 +16,15 @@ const PORT = process.env.PORT || 5001;
 
 // Single allowed origin — set CLIENT_URL to your frontend URL, exactly
 // (scheme + host, no trailing slash). One origin only, not a list.
-const allowedOrigin = process.env.CLIENT_URL || 'http://localhost:5173';
+// CLIENT_URL holds one origin or a comma-separated list, so a single deployment
+// can serve both the hosted frontend and a local dev server:
+//   CLIENT_URL=https://findmyartisan-2.onrender.com,http://localhost:5173
+// Entries are trimmed and any trailing slash is stripped — browsers never send
+// one in the Origin header, so a stray "/" would silently reject every request.
+const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
+  .split(',')
+  .map((origin) => origin.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
 
 const isDev = (process.env.NODE_ENV || 'development') !== 'production';
 
@@ -25,8 +33,8 @@ app.use(cors({
   origin: (origin, callback) => {
     // Allow non-browser requests (curl, server-to-server) which have no Origin header
     if (!origin) return callback(null, true);
-    // Allow the single configured origin
-    if (origin === allowedOrigin) return callback(null, true);
+    // Allow any configured origin
+    if (allowedOrigins.includes(origin)) return callback(null, true);
     // In development, also allow alternative localhost ports (Vite may pick 5173, 5174, ...)
     if (isDev && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
       return callback(null, true);
@@ -104,7 +112,8 @@ async function start() {
     app.listen(PORT, () => {
       console.log(`\n🚀 FindMyArtisan API running on http://localhost:${PORT}`);
       console.log(`📋 Health check: http://localhost:${PORT}/api/health`);
-      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}\n`);
+      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🔓 Allowed origins: ${allowedOrigins.join(', ')}\n`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);
