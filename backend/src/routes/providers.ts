@@ -2,7 +2,7 @@ import { Router, Response } from 'express';
 import { query } from '../config/database';
 import { authenticate, requireAdmin, optionalAuth } from '../middleware/auth';
 import { AuthRequest, NearbyQuery } from '../types';
-import { imageUpload, publicUrl, deleteUploadedFile } from '../middleware/upload';
+import { imageUpload, uploadImage, uploadImages, deleteUploadedFile } from '../middleware/upload';
 import { logActivity } from '../services/activity';
 
 const router = Router();
@@ -223,11 +223,13 @@ router.post(
       }
       const providerId = provider.rows[0].id;
 
+      const imageUrls = await uploadImages(files);
+
       const inserted = [];
-      for (const file of files) {
+      for (const imageUrl of imageUrls) {
         const result = await query(
           'INSERT INTO work_images (provider_id, image_url) VALUES ($1, $2) RETURNING id, image_url, caption, created_at',
-          [providerId, publicUrl(file.filename)]
+          [providerId, imageUrl]
         );
         inserted.push(result.rows[0]);
       }
@@ -439,7 +441,7 @@ router.post('/', authenticate, imageUpload.single('profileImage'), async (req: A
 
     // Prefer an uploaded file; fall back to a provided URL, else null.
     const resolvedProfileImage = req.file
-      ? publicUrl(req.file.filename)
+      ? await uploadImage(req.file)
       : (typeof profileImage === 'string' && profileImage.trim() ? profileImage.trim() : null);
 
     // Validation — a category is required either as an existing id or a custom name
