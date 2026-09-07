@@ -13,7 +13,7 @@
 services:
   # ── API ────────────────────────────────────────────────────────────────
   - type: web
-    name: findmyartisan-api
+    name: findmyartisan-1
     runtime: node
     plan: free
     rootDir: backend
@@ -38,7 +38,9 @@ services:
       - key: EMAIL_FROM_NAME
         value: FindMyArtisan
       # CORS origin — the static site's full URL, e.g.
-      # https://findmyartisan-web.onrender.com  (exact match, NO trailing slash)
+      # https://findmyartisan-2.onrender.com  (exact match, NO trailing slash).
+      # Accepts a comma-separated list, so local dev can be included:
+      #   https://findmyartisan-2.onrender.com,http://localhost:5173
       - key: CLIENT_URL
         sync: false
       - key: DATABASE_URL
@@ -61,7 +63,7 @@ services:
   # ── Web (static SPA) ───────────────────────────────────────────────────
   # Static sites are free and never spin down, unlike free web services.
   - type: web
-    name: findmyartisan-web
+    name: findmyartisan-2
     runtime: static
     rootDir: frontend
     # --include=dev is required: NODE_ENV=production makes npm omit
@@ -77,7 +79,9 @@ services:
         value: "5"
       - key: VITE_MAX_RADIUS
         value: "25"
-      # Baked into the bundle at build time. Must include the /api suffix.
+      # Baked into the bundle at BUILD time, so changing it needs a rebuild,
+      # not a restart. Must include the /api suffix:
+      #   https://findmyartisan-1.onrender.com/api
       - key: VITE_API_URL
         sync: false
     routes:
