@@ -8,7 +8,10 @@
 #   DATABASE_URL   Neon pooled connection string, must end with ?sslmode=require
 #   JWT_SECRET     long random string
 #   CLOUDINARY_URL cloudinary://<api_key>:<api_secret>@<cloud_name>
-#   BREVO_API_KEY  transactional email key (optional — OTPs log to console without it)
+#
+# Email (BREVO_API_KEY / EMAIL_FROM) is intentionally absent: OTP verification
+# is disabled and no route calls the email service. Re-add them here if it
+# is ever switched back on.
 
 services:
   # ── API ────────────────────────────────────────────────────────────────
@@ -35,8 +38,6 @@ services:
         value: "25"
       - key: SEED_SAMPLE_DATA
         value: "false"
-      - key: EMAIL_FROM_NAME
-        value: FindMyArtisan
       # CORS origin — the static site's full URL, e.g.
       # https://findmyartisan-2.onrender.com  (exact match, NO trailing slash).
       # Accepts a comma-separated list, so local dev can be included:
@@ -48,10 +49,6 @@ services:
       - key: JWT_SECRET
         sync: false
       - key: CLOUDINARY_URL
-        sync: false
-      - key: BREVO_API_KEY
-        sync: false
-      - key: EMAIL_FROM
         sync: false
       - key: ADMIN_EMAIL
         sync: false
