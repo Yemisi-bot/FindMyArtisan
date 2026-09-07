@@ -14,7 +14,8 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-// Single allowed origin — set CLIENT_URL in .env to your frontend URL
+// Single allowed origin — set CLIENT_URL to your frontend URL, exactly
+// (scheme + host, no trailing slash). One origin only, not a list.
 const allowedOrigin = process.env.CLIENT_URL || 'http://localhost:5173';
 
 const isDev = (process.env.NODE_ENV || 'development') !== 'production';
@@ -36,8 +37,9 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Serve uploaded images (work catalogs, review photos)
-// On Railway: mount a Volume and set UPLOAD_DIR to its mount path
+// Serve legacy uploaded images (work catalogs, review photos) saved to disk
+// before the move to Cloudinary. New uploads are absolute Cloudinary URLs and
+// never touch this path — it stays for local development and old DB rows.
 app.use('/uploads', express.static(UPLOAD_DIR, { maxAge: '7d' }));
 
 // Health check — `build` lets you confirm which code version is actually
