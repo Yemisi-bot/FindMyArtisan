@@ -36,6 +36,7 @@ export function useGeolocation(): UseGeolocationReturn {
           latitude: pos.coords.latitude,
           longitude: pos.coords.longitude,
         });
+        setIsBlocked(false);
         setIsLoading(false);
       },
       (err) => {
@@ -75,10 +76,25 @@ export function useGeolocation(): UseGeolocationReturn {
     // blocked never raises a prompt, so we can show guidance immediately instead
     // of waiting for getCurrentPosition to fail.
     let cancelled = false;
+    let permissionStatus: PermissionStatus | undefined;
     const start = async () => {
       try {
         const status = await navigator.permissions?.query({ name: 'geolocation' as PermissionName });
         if (cancelled) return;
+        // Recover without a page reload: if the user follows our instructions and
+        // allows location in site settings, re-run the request straight away.
+        if (status) {
+          permissionStatus = status;
+          status.onchange = () => {
+            if (cancelled) return;
+            if (status.state === 'denied') {
+              setIsBlocked(true);
+            } else {
+              setIsBlocked(false);
+              requestLocation();
+            }
+          };
+        }
         if (status?.state === 'denied') {
           setIsBlocked(true);
           setError(
@@ -97,6 +113,7 @@ export function useGeolocation(): UseGeolocationReturn {
     start();
     return () => {
       cancelled = true;
+      if (permissionStatus) permissionStatus.onchange = null;
     };
   }, []);
 

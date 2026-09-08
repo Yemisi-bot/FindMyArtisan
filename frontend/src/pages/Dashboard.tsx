@@ -669,8 +669,14 @@ export default function Dashboard() {
               </p>
               <button
                 type="button"
-                className="btn-primary inline-flex items-center gap-2 text-sm"
+                className="btn-primary inline-flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={handleUseMyLocation}
+                disabled={geoBlocked}
+                title={
+                  geoBlocked
+                    ? "Location is blocked for this site. Allow it in your browser's site settings."
+                    : undefined
+                }
               >
                 <Navigation size={16} />
                 Share My Location
