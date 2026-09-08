@@ -453,6 +453,33 @@ router.post('/', authenticate, imageUpload.single('profileImage'), async (req: A
       return;
     }
 
+    // Coordinates arrive as strings from multipart form-data, so a truthiness
+    // check passes "0" straight through and stores a point in the Atlantic that
+    // no radius search can ever match. Parse and range-check them properly.
+    const lat = Number(latitude);
+    const lng = Number(longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      res.status(400).json({
+        success: false,
+        message: 'Latitude and longitude must be valid numbers.',
+      });
+      return;
+    }
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      res.status(400).json({
+        success: false,
+        message: 'Coordinates are out of range.',
+      });
+      return;
+    }
+    if (lat === 0 && lng === 0) {
+      res.status(400).json({
+        success: false,
+        message: 'A real location is required — 0, 0 is not a valid business location.',
+      });
+      return;
+    }
+
     // Resolve the category: use the existing one, or create a new one from the custom name
     let resolvedCategoryId = categoryId as string | undefined;
     if (customCategory && String(customCategory).trim()) {
@@ -498,7 +525,7 @@ router.post('/', authenticate, imageUpload.single('profileImage'), async (req: A
       `INSERT INTO providers (user_id, business_name, category_id, description, phone, address, location, profile_image)
        VALUES ($1, $2, $3, $4, $5, $6, ST_SetSRID(ST_MakePoint($7, $8), 4326)::geography, $9)
        RETURNING id, business_name, is_verified, created_at`,
-      [req.user!.userId, businessName, resolvedCategoryId, description, phone, address, longitude, latitude, resolvedProfileImage]
+      [req.user!.userId, businessName, resolvedCategoryId, description, phone, address, lng, lat, resolvedProfileImage]
     );
 
     // Creating a business makes this account an artisan — upgrade the role so

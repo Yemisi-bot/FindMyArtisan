@@ -155,6 +155,23 @@ export default function ProviderRegister() {
       setError('Address is required.');
       return;
     }
+    // Coordinates decide whether this artisan is ever found in search. Without
+    // them the form used to submit 0,0 — a point in the Atlantic that matches
+    // no radius search — so refuse to submit instead of saving a dead profile.
+    const lat = parseFloat(latitude);
+    const lng = parseFloat(longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      setError('Location is required. Tap "Use My Current Location", or type your latitude and longitude.');
+      return;
+    }
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      setError('That location looks wrong. Latitude must be between -90 and 90, longitude between -180 and 180.');
+      return;
+    }
+    if (lat === 0 && lng === 0) {
+      setError('Location is required. 0, 0 is in the Atlantic Ocean — set your real location.');
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -167,8 +184,8 @@ export default function ProviderRegister() {
         description: description.trim(),
         phone: phone.trim(),
         address: address.trim(),
-        latitude: parseFloat(latitude) || 0,
-        longitude: parseFloat(longitude) || 0,
+        latitude: lat,
+        longitude: lng,
         profileImage,
       });
 
