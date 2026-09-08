@@ -49,7 +49,7 @@ const RADIUS_OPTIONS = [
 ];
 
 export default function Dashboard() {
-  const { position, error: geoError, isLoading: geoLoading, requestLocation } = useGeolocation();
+  const { position, error: geoError, isLoading: geoLoading, isBlocked: geoBlocked, requestLocation } = useGeolocation();
   const { isAuthenticated } = useAuth();
 
   // Provider data
@@ -101,11 +101,13 @@ export default function Dashboard() {
   // Derive location description for subtitle
   const locationStatus = geoLoading
     ? 'Detecting your location...'
-    : geoError
-      ? 'Location unavailable — enter coordinates below'
-      : effectivePosition
-        ? `Near ${effectivePosition.latitude.toFixed(4)}, ${effectivePosition.longitude.toFixed(4)}`
-        : 'Location not set';
+    : geoBlocked
+      ? 'Location blocked — allow it in your browser\'s site settings, or enter coordinates below'
+      : geoError
+        ? 'Location unavailable — enter coordinates below'
+        : effectivePosition
+          ? `Near ${effectivePosition.latitude.toFixed(4)}, ${effectivePosition.longitude.toFixed(4)}`
+          : 'Location not set';
 
   // ─── Fetch categories on mount ────────────────────────────────────────
   useEffect(() => {
@@ -369,8 +371,14 @@ export default function Dashboard() {
             </label>
             <button
               type="button"
-              className="btn-glass inline-flex items-center gap-2 text-sm py-2.5 px-4"
+              className="btn-glass inline-flex items-center gap-2 text-sm py-2.5 px-4 disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={handleUseMyLocation}
+              disabled={geoBlocked}
+              title={
+                geoBlocked
+                  ? "Location is blocked for this site. Allow it in your browser's site settings, then reload."
+                  : undefined
+              }
             >
               <Navigation size={16} />
               Use My Location
@@ -565,12 +573,20 @@ export default function Dashboard() {
                 <MapPin size={48} className="text-brand/45 mb-4" />
                 <h3 className="font-bold text-ink mb-2">Map unavailable</h3>
                 <p className="text-sm text-charcoal/60 mb-4">
-                  Enable location services or enter coordinates above to see the map.
+                  {geoBlocked
+                    ? "Location is blocked for this site. Allow it in your browser's site settings, or enter coordinates above to see the map."
+                    : 'Enable location services or enter coordinates above to see the map.'}
                 </p>
                 <button
                   type="button"
-                  className="btn-glass inline-flex items-center gap-2 text-sm"
+                  className="btn-glass inline-flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={handleUseMyLocation}
+                  disabled={geoBlocked}
+                  title={
+                    geoBlocked
+                      ? "Location is blocked for this site. Allow it in your browser's site settings, then reload."
+                      : undefined
+                  }
                 >
                   <Navigation size={16} />
                   Use My Location
