@@ -1,0 +1,15 @@
+# Keep shell scripts LF even when cloned on Windows.
+# Git for Windows defaults to core.autocrlf=true, which rewrites .sh files with
+# CRLF endings. bash then fails with a confusing "\r: command not found", and
+# any .sh copied into a Docker image breaks the same way.
+*.sh text eol=lf
+
+# Windows batch files are the opposite: they need CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Config read by Linux containers — keep LF.
+*.yml text eol=lf
+*.yaml text eol=lf
+nginx.conf text eol=lf
+Dockerfile* text eol=lf
