@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import {
   MapPin,
@@ -18,6 +18,24 @@ import L from 'leaflet';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { useAuth } from '../hooks/useAuth';
 import { providersApi } from '../services/api';
+import {
+  APPROXIMATE_ACCURACY_M,
+  formatDistance,
+  isValidCoordinate,
+  parseCoordinates,
+  searchPlaces,
+  shortLabel,
+  type PlaceResult,
+} from '../services/geocode';
+import {
+  DEFAULT_MAP_CENTER,
+  DEFAULT_MAP_ZOOM,
+  LOCATED_MAP_ZOOM,
+  OSM_ATTRIBUTION,
+  OSM_TILE_URL,
+  escapeHtml,
+  userLocationIcon,
+} from '../services/mapUtils';
 import ProviderCard from '../components/ProviderCard';
 import TradeIcon from '../components/TradeIcon';
 import type { ServiceProvider, ServiceCategory, Geoposition } from '../types';
@@ -48,8 +66,42 @@ const RADIUS_OPTIONS = [
   { value: 25, label: '25 km' },
 ];
 
+// The location the user picked by searching / tapping the map is remembered in
+// this browser, so a laptop whose GPS guess is wrong doesn't have to be
+// corrected on every visit. "Use My Location" clears it.
+const SAVED_LOCATION_KEY = 'fma.searchLocation';
+
+function loadSavedLocation(): Geoposition | null {
+  try {
+    const raw = window.localStorage.getItem(SAVED_LOCATION_KEY);
+    if (!raw) return null;
+    const v = JSON.parse(raw) as Geoposition;
+    return isValidCoordinate(Number(v.latitude), Number(v.longitude))
+      ? { latitude: Number(v.latitude), longitude: Number(v.longitude), label: v.label }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveLocation(pos: Geoposition | null) {
+  try {
+    if (pos) window.localStorage.setItem(SAVED_LOCATION_KEY, JSON.stringify(pos));
+    else window.localStorage.removeItem(SAVED_LOCATION_KEY);
+  } catch {
+    // Storage unavailable (private mode etc.) — the choice just won't persist.
+  }
+}
+
 export default function Dashboard() {
-  const { position, error: geoError, isLoading: geoLoading, isBlocked: geoBlocked, requestLocation } = useGeolocation();
+  const {
+    position,
+    error: geoError,
+    isLoading: geoLoading,
+    isRefining: geoRefining,
+    isBlocked: geoBlocked,
+    requestLocation,
+  } = useGeolocation();
   const { isAuthenticated } = useAuth();
 
   // Provider data
@@ -85,29 +137,58 @@ export default function Dashboard() {
   // View state
   const [mapView, setMapView] = useState(true);
 
-  // Manual coordinates (fallback when geolocation fails)
-  const [manualPosition, setManualPosition] = useState<Geoposition | null>(null);
-  const [manualLat, setManualLat] = useState('');
-  const [manualLng, setManualLng] = useState('');
-  const [showManualInput, setShowManualInput] = useState(false);
+  // A location the user chose themselves (place search, map tap, pin drag).
+  // It always wins over the browser's guess — the old code did the opposite,
+  // so a wrong GPS/IP fix could never be corrected.
+  const [manualPosition, setManualPosition] = useState<Geoposition | null>(() => loadSavedLocation());
 
-  // Map ref
+  // Place search
+  const [placeQuery, setPlaceQuery] = useState('');
+  const [placeResults, setPlaceResults] = useState<PlaceResult[]>([]);
+  const [placeSearching, setPlaceSearching] = useState(false);
+  const [placeError, setPlaceError] = useState<string | null>(null);
+  const placeAbortRef = useRef<AbortController | null>(null);
+
+  // Map refs
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
+  const userLayerRef = useRef<L.LayerGroup | null>(null);
+  const providerLayerRef = useRef<L.LayerGroup | null>(null);
 
-  // Effective position: geolocation takes priority, fall back to manual
-  const effectivePosition = position || manualPosition;
+  const effectivePosition = manualPosition || position;
+  const usingManual = !!manualPosition;
+
+  // The browser's fix is a rough guess (IP / cell tower) — tell the user.
+  const isApproximate =
+    !usingManual && !!position && position.accuracy !== undefined && position.accuracy > APPROXIMATE_ACCURACY_M;
 
   // Derive location description for subtitle
-  const locationStatus = geoLoading
-    ? 'Detecting your location...'
-    : geoBlocked
-      ? 'Location blocked — allow it in your browser\'s site settings, or enter coordinates below'
-      : geoError
-        ? 'Location unavailable — enter coordinates below'
-        : effectivePosition
-          ? `Near ${effectivePosition.latitude.toFixed(4)}, ${effectivePosition.longitude.toFixed(4)}`
-          : 'Location not set';
+  const locationStatus = usingManual
+    ? manualPosition.label
+      ? `Near ${shortLabel(manualPosition.label)}`
+      : `Near your pin (${manualPosition.latitude.toFixed(4)}, ${manualPosition.longitude.toFixed(4)})`
+    : geoLoading
+      ? 'Detecting your location...'
+      : position
+        ? `Near ${position.latitude.toFixed(4)}, ${position.longitude.toFixed(4)}` +
+          (position.accuracy !== undefined ? ` (± ${formatDistance(position.accuracy)})` : '') +
+          (geoRefining ? ' · improving…' : '')
+        : geoBlocked
+          ? 'Location blocked — search for your area below'
+          : geoError
+            ? 'Location unavailable — search for your area below'
+            : 'Location not set';
+
+  const setChosenLocation = useCallback((pos: Geoposition) => {
+    setManualPosition(pos);
+    saveLocation(pos);
+    setPlaceResults([]);
+    setPlaceError(null);
+  }, []);
+
+  // Keep a stable ref so Leaflet handlers always call the latest setter.
+  const setChosenLocationRef = useRef(setChosenLocation);
+  setChosenLocationRef.current = setChosenLocation;
 
   // ─── Fetch categories on mount ────────────────────────────────────────
   useEffect(() => {
@@ -123,8 +204,8 @@ export default function Dashboard() {
       });
   }, []);
 
-  // ─── Fetch nearby providers when position, radius, or category change ──
-  useEffect(() => {
+  // ─── Fetch nearby providers ───────────────────────────────────────────
+  const fetchNearby = useCallback(() => {
     if (!effectivePosition) {
       setIsLoading(false);
       return;
@@ -138,12 +219,8 @@ export default function Dashboard() {
       longitude: effectivePosition.longitude,
       radius,
     };
-    if (selectedCategory) {
-      params.category = selectedCategory;
-    }
-    if (debouncedTerm) {
-      params.q = debouncedTerm;
-    }
+    if (selectedCategory) params.category = selectedCategory;
+    if (debouncedTerm) params.q = debouncedTerm;
 
     providersApi
       .getNearby(params)
@@ -161,138 +238,165 @@ export default function Dashboard() {
         setProviders([]);
       })
       .finally(() => setIsLoading(false));
-  }, [effectivePosition, radius, selectedCategory, debouncedTerm]);
+    // Only re-query when the point actually moves, not on every new object.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectivePosition?.latitude, effectivePosition?.longitude, radius, selectedCategory, debouncedTerm]);
 
-  // ─── Initialize Leaflet map and add markers ──────────────────────────
   useEffect(() => {
-    if (!mapContainerRef.current || !effectivePosition || !mapView) return;
+    fetchNearby();
+  }, [fetchNearby]);
 
-    // Destroy previous map instance if it exists (providers change triggers re-init)
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.remove();
-      mapInstanceRef.current = null;
-    }
+  // ─── Create the Leaflet map (once per map view) ───────────────────────
+  // The map is always shown — with no position it opens on Nigeria and the
+  // user can tap to set their location. It used to be replaced by a dead
+  // "Map unavailable" box whenever the browser couldn't locate the user.
+  useEffect(() => {
+    if (!mapView || !mapContainerRef.current) return;
 
     const map = L.map(mapContainerRef.current, {
-      center: [effectivePosition.latitude, effectivePosition.longitude],
-      zoom: 14,
+      center: DEFAULT_MAP_CENTER,
+      zoom: DEFAULT_MAP_ZOOM,
       zoomControl: true,
       scrollWheelZoom: true,
     });
+    L.tileLayer(OSM_TILE_URL, { attribution: OSM_ATTRIBUTION, maxZoom: 19 }).addTo(map);
+    userLayerRef.current = L.layerGroup().addTo(map);
+    providerLayerRef.current = L.layerGroup().addTo(map);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      maxZoom: 19,
-    }).addTo(map);
+    map.on('click', (e: L.LeafletMouseEvent) => {
+      setChosenLocationRef.current({
+        latitude: e.latlng.lat,
+        longitude: e.latlng.lng,
+      });
+    });
 
-    // User marker at current position
-    L.marker([effectivePosition.latitude, effectivePosition.longitude], {
-      icon: L.divIcon({
-        className: 'user-marker',
-        html: '<span class="user-location-marker" aria-hidden="true"></span>',
-        iconSize: [20, 20],
-        iconAnchor: [10, 10],
-      }),
-    })
-      .addTo(map)
-      .bindPopup('<b>You are here</b>')
-      .openPopup();
+    mapInstanceRef.current = map;
+    const t = window.setTimeout(() => map.invalidateSize(), 200);
 
-    // Provider markers
+    return () => {
+      window.clearTimeout(t);
+      map.remove();
+      mapInstanceRef.current = null;
+      userLayerRef.current = null;
+      providerLayerRef.current = null;
+    };
+  }, [mapView]);
+
+  // ─── User marker + accuracy circle ────────────────────────────────────
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    const layer = userLayerRef.current;
+    if (!map || !layer) return;
+    layer.clearLayers();
+    if (!effectivePosition) return;
+
+    const point: L.LatLngTuple = [effectivePosition.latitude, effectivePosition.longitude];
+    const accuracy = !usingManual ? effectivePosition.accuracy : undefined;
+
+    if (accuracy && accuracy > 30) {
+      L.circle(point, {
+        radius: accuracy,
+        color: '#0e6570',
+        weight: 1,
+        fillOpacity: 0.08,
+        interactive: false,
+      }).addTo(layer);
+    }
+
+    const marker = L.marker(point, { icon: userLocationIcon(), draggable: true, autoPan: true })
+      .addTo(layer)
+      .bindPopup(
+        usingManual
+          ? '<b>Searching from here</b><br/><span style="font-size:12px">Drag the dot or tap the map to move it.</span>'
+          : accuracy && accuracy > APPROXIMATE_ACCURACY_M
+            ? `<b>You might be here</b><br/><span style="font-size:12px">Your browser is only accurate to ± ${formatDistance(accuracy)}. Drag the dot to where you really are.</span>`
+            : '<b>You are here</b>'
+      );
+    marker.on('dragend', () => {
+      const ll = marker.getLatLng();
+      setChosenLocationRef.current({ latitude: ll.lat, longitude: ll.lng });
+    });
+    marker.openPopup();
+
+    map.setView(point, Math.max(map.getZoom(), LOCATED_MAP_ZOOM));
+  }, [effectivePosition, usingManual, mapView]);
+
+  // ─── Provider markers ─────────────────────────────────────────────────
+  useEffect(() => {
+    const layer = providerLayerRef.current;
+    if (!layer) return;
+    layer.clearLayers();
+
     providers.forEach((p) => {
       if (p.latitude == null || p.longitude == null) return;
 
       const popupHtml = `
         <div style="min-width: 140px;">
-          <b style="font-size: 14px;">${p.business_name}</b><br/>
-          <span style="font-size: 13px;">${p.category_name}</span><br/>
+          <b style="font-size: 14px;">${escapeHtml(p.business_name)}</b><br/>
+          <span style="font-size: 13px;">${escapeHtml(p.category_name)}</span><br/>
           <span style="color: #0e6570; font-size: 13px; font-weight: 700;">${Number(p.average_rating).toFixed(1)} rating</span>
-          <span style="color: #6b7280; font-size: 12px;"> (${p.review_count} reviews)</span><br/>
-          ${p.distance_km != null ? `<span style="color: #6b7280; font-size: 12px;">${p.distance_km.toFixed(1)} km away</span><br/>` : ''}
-          <a href="/provider/${p.id}" style="display:inline-block;margin-top:6px;color:#0e6570;font-weight:700;font-size:12px;">View profile</a>
+          <span style="color: #6b7280; font-size: 12px;"> (${Number(p.review_count) || 0} reviews)</span><br/>
+          ${p.distance_km != null ? `<span style="color: #6b7280; font-size: 12px;">${Number(p.distance_km).toFixed(1)} km away</span><br/>` : ''}
+          <a href="/provider/${encodeURIComponent(p.id)}" style="display:inline-block;margin-top:6px;color:#0e6570;font-weight:700;font-size:12px;">View profile</a>
         </div>
       `;
 
-      L.marker([p.latitude, p.longitude])
-        .addTo(map)
-        .bindPopup(popupHtml);
+      L.marker([Number(p.latitude), Number(p.longitude)]).addTo(layer).bindPopup(popupHtml);
     });
-
-    mapInstanceRef.current = map;
-
-    // Fix map rendering after container becomes visible
-    setTimeout(() => {
-      map.invalidateSize();
-    }, 200);
-
-    return () => {
-      map.remove();
-      mapInstanceRef.current = null;
-    };
-  }, [effectivePosition, mapView, providers]);
+  }, [providers, mapView]);
 
   // ─── Handlers ─────────────────────────────────────────────────────────
   const handleUseMyLocation = useCallback(() => {
-    setShowManualInput(false);
+    setManualPosition(null);
+    saveLocation(null);
+    setPlaceResults([]);
+    setPlaceError(null);
     requestLocation();
   }, [requestLocation]);
 
-  const handleManualSubmit = useCallback(() => {
-    const lat = parseFloat(manualLat);
-    const lng = parseFloat(manualLng);
-    if (isNaN(lat) || isNaN(lng)) return;
-    setManualPosition({ latitude: lat, longitude: lng });
-    setShowManualInput(false);
-  }, [manualLat, manualLng]);
+  const handlePlaceSearch = useCallback(
+    async (e?: FormEvent) => {
+      e?.preventDefault();
+      const q = placeQuery.trim();
+      if (!q) return;
 
-  const handleRefresh = useCallback(() => {
-    if (effectivePosition) {
-      setIsLoading(true);
-      setFetchError(null);
-      const params: { latitude: number; longitude: number; radius?: number; category?: string; q?: string } = {
-        latitude: effectivePosition.latitude,
-        longitude: effectivePosition.longitude,
-        radius,
-      };
-      if (selectedCategory) params.category = selectedCategory;
-      if (debouncedTerm) params.q = debouncedTerm;
+      // Pasted coordinates skip the network round trip.
+      const coords = parseCoordinates(q);
+      if (coords) {
+        setChosenLocation({ ...coords, label: `${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}` });
+        return;
+      }
 
-      providersApi
-        .getNearby(params)
-        .then((res) => {
-          if (res.data.success && res.data.data) {
-            setProviders(res.data.data as ServiceProvider[]);
-          } else {
-            setProviders([]);
-          }
-        })
-        .catch((err) => {
-          setFetchError(err.response?.data?.message || err.message || 'Failed to fetch providers.');
-          setProviders([]);
-        })
-        .finally(() => setIsLoading(false));
-    }
-  }, [effectivePosition, radius, selectedCategory, debouncedTerm]);
+      placeAbortRef.current?.abort();
+      const ctrl = new AbortController();
+      placeAbortRef.current = ctrl;
+      setPlaceSearching(true);
+      setPlaceError(null);
+      setPlaceResults([]);
+      try {
+        const results = await searchPlaces(q, ctrl.signal);
+        if (results.length === 0) {
+          setPlaceError('No matching place found. Try your town name, e.g. "Ilaro" or "Ikeja".');
+        } else if (results.length === 1) {
+          setChosenLocation(results[0]);
+          setPlaceQuery(shortLabel(results[0].label));
+        } else {
+          setPlaceResults(results);
+        }
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          setPlaceError('Place search is unavailable right now. Tap the map to set your location instead.');
+        }
+      } finally {
+        if (placeAbortRef.current === ctrl) setPlaceSearching(false);
+      }
+    },
+    [placeQuery, setChosenLocation]
+  );
 
-  // ─── Show manual input when geolocation fails ─────────────────────────
-  useEffect(() => {
-    if (geoError && !manualPosition) {
-      setShowManualInput(true);
-    }
-  }, [geoError, manualPosition]);
+  useEffect(() => () => placeAbortRef.current?.abort(), []);
 
-  // ─── Loading state ────────────────────────────────────────────────────
-  if (geoLoading) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 animate-fade-in">
-          <div className="spinner" />
-          <p className="text-lg text-gray-700 font-medium">Finding nearby artisans...</p>
-          <p className="text-sm text-gray-500">Detecting your location</p>
-        </div>
-      </div>
-    );
-  }
+  const handleRefresh = fetchNearby;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 animate-fade-in">
@@ -441,53 +545,88 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Manual coordinate input (visible when geolocation errors) */}
-        {showManualInput && (
-          <div className="mt-4 pt-4 border-t border-ink/10 animate-fade-in">
-            <div className="flex items-start gap-2 mb-3">
+        {/* Location: search a place, or see why the automatic fix may be wrong */}
+        <div className="mt-4 pt-4 border-t border-ink/10">
+          {(isApproximate || (!effectivePosition && !geoLoading && geoError)) && (
+            <div className="flex items-start gap-2 mb-3 animate-fade-in" role="status">
               <AlertCircle size={18} className="text-clay mt-0.5 shrink-0" />
               <div>
-                <p className="text-sm font-bold text-ink">{geoError}</p>
+                <p className="text-sm font-bold text-ink">
+                  {isApproximate
+                    ? `Your location is only a rough guess (± ${formatDistance(position!.accuracy!)}).`
+                    : geoError}
+                </p>
                 <p className="text-xs text-charcoal/55 mt-0.5">
-                  Enter your coordinates manually to find nearby artisans.
+                  {isApproximate
+                    ? 'Computers without GPS often show the wrong town. Search for your area below, or drag the dot on the map to where you are.'
+                    : 'Search for your town or street below, or tap the map to set where you are.'}
                 </p>
               </div>
             </div>
-            <div className="flex flex-wrap items-end gap-3">
-              <div className="w-[140px]">
-                <label className="block text-xs font-bold text-charcoal/65 mb-1">Latitude</label>
-                <input
-                  type="number"
-                  step="any"
-                  className="glass-input py-2 text-sm"
-                  placeholder="e.g. 6.5244"
-                  value={manualLat}
-                  onChange={(e) => setManualLat(e.target.value)}
-                />
-              </div>
-              <div className="w-[140px]">
-                <label className="block text-xs font-bold text-charcoal/65 mb-1">Longitude</label>
-                <input
-                  type="number"
-                  step="any"
-                  className="glass-input py-2 text-sm"
-                  placeholder="e.g. 3.3792"
-                  value={manualLng}
-                  onChange={(e) => setManualLng(e.target.value)}
-                />
-              </div>
+          )}
+
+          <form className="flex flex-wrap items-end gap-3" onSubmit={handlePlaceSearch}>
+            <div className="flex-1 min-w-[220px]">
+              <label
+                htmlFor="place-search"
+                className="block font-mono text-[11px] font-medium text-charcoal/60 uppercase tracking-[0.12em] mb-1.5"
+              >
+                <MapPin size={12} className="inline mr-1" aria-hidden="true" />
+                {usingManual ? 'Searching near' : 'Wrong location? Search your area'}
+              </label>
+              <input
+                id="place-search"
+                type="text"
+                className="glass-input py-2 text-sm"
+                placeholder="e.g. Ilaro, Ogun State or 14 Taiwo Street, Lagos"
+                value={placeQuery}
+                onChange={(e) => setPlaceQuery(e.target.value)}
+                autoComplete="off"
+              />
+            </div>
+            <button
+              type="submit"
+              className="btn-primary inline-flex items-center gap-2 text-sm py-2 px-5 disabled:opacity-50"
+              disabled={!placeQuery.trim() || placeSearching}
+            >
+              {placeSearching ? <span className="spinner !w-4 !h-4 !border-2" /> : <Search size={16} />}
+              Set location
+            </button>
+            {usingManual && (
               <button
                 type="button"
-                className="btn-primary inline-flex items-center gap-2 text-sm py-2 px-5"
-                onClick={handleManualSubmit}
-                disabled={!manualLat || !manualLng}
+                className="btn-glass inline-flex items-center gap-2 text-sm py-2 px-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleUseMyLocation}
+                disabled={geoBlocked}
               >
-                <Search size={16} />
-                Search
+                <Navigation size={16} />
+                Use my device location
               </button>
-            </div>
-          </div>
-        )}
+            )}
+          </form>
+
+          {placeError && <p className="mt-2 text-sm text-red-700">{placeError}</p>}
+
+          {placeResults.length > 0 && (
+            <ul className="mt-2 divide-y divide-ink/10 rounded-lg border border-ink/10 bg-surface animate-fade-in">
+              {placeResults.map((r) => (
+                <li key={`${r.latitude},${r.longitude}`}>
+                  <button
+                    type="button"
+                    className="w-full px-3 py-2 text-left text-sm text-charcoal/80 hover:bg-surface-muted"
+                    onClick={() => {
+                      setChosenLocation(r);
+                      setPlaceQuery(shortLabel(r.label));
+                    }}
+                  >
+                    <MapPin size={14} className="inline mr-1.5 text-brand" aria-hidden="true" />
+                    {r.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </section>
 
       {/* ── Recent searches ─────────────────────────────────────────────── */}
@@ -555,44 +694,46 @@ export default function Dashboard() {
 
       {/* ── Main Content ────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {/* Map Panel */}
+        {/* Map Panel — always rendered; tap to set location when none is known */}
         {mapView && (
           <div className="lg:col-span-3 order-1 lg:order-1">
-            {effectivePosition ? (
-              <>
-                <div
-                  ref={mapContainerRef}
-                  className="map-container w-full h-[300px] md:h-[500px]"
-                />
-                <p className="text-xs text-gray-500 mt-2 text-center">
-                  Interactive map powered by Leaflet &amp; OpenStreetMap
-                </p>
-              </>
-            ) : (
-              <div className="border border-dashed border-ink/20 bg-surface-muted p-10 flex flex-col items-center justify-center text-center min-h-[300px] animate-fade-in">
-                <MapPin size={48} className="text-brand/45 mb-4" />
-                <h3 className="font-bold text-ink mb-2">Map unavailable</h3>
-                <p className="text-sm text-charcoal/60 mb-4">
-                  {geoBlocked
-                    ? "Location is blocked for this site. Allow it in your browser's site settings, or enter coordinates above to see the map."
-                    : 'Enable location services or enter coordinates above to see the map.'}
-                </p>
-                <button
-                  type="button"
-                  className="btn-glass inline-flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  onClick={handleUseMyLocation}
-                  disabled={geoBlocked}
-                  title={
-                    geoBlocked
-                      ? "Location is blocked for this site. Allow it in your browser's site settings, then reload."
-                      : undefined
-                  }
-                >
-                  <Navigation size={16} />
-                  Use My Location
-                </button>
-              </div>
-            )}
+            <div className="relative">
+              <div ref={mapContainerRef} className="map-container w-full h-[300px] md:h-[500px]" />
+              {!effectivePosition && (
+                <div className="pointer-events-none absolute inset-x-3 top-3 z-[1000] flex justify-center">
+                  <div className="pointer-events-auto max-w-md rounded-lg border border-ink/10 bg-[#fffefa]/95 px-4 py-3 text-center shadow-md">
+                    {geoLoading ? (
+                      <p className="flex items-center justify-center gap-2 text-sm font-medium text-ink">
+                        <span className="spinner !w-4 !h-4 !border-2" />
+                        Detecting your location…
+                      </p>
+                    ) : (
+                      <>
+                        <p className="text-sm font-bold text-ink">Where are you?</p>
+                        <p className="mt-1 text-xs text-charcoal/65">
+                          {geoBlocked
+                            ? "Location is blocked for this site. Tap the map where you are, search your area above, or allow Location in your browser's site settings."
+                            : 'Tap the map where you are, or search your area above.'}
+                        </p>
+                        {!geoBlocked && (
+                          <button
+                            type="button"
+                            className="btn-glass mt-2 inline-flex items-center gap-2 text-xs py-1.5 px-3"
+                            onClick={handleUseMyLocation}
+                          >
+                            <Navigation size={14} />
+                            Try my device location again
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            <p className="text-xs text-gray-500 mt-2 text-center">
+              Tap the map or drag the dot to change where you&apos;re searching from · Leaflet &amp; OpenStreetMap
+            </p>
           </div>
         )}
 
@@ -656,31 +797,37 @@ export default function Dashboard() {
                 No providers found in this area. Try expanding your search radius or selecting a
                 different category.
               </p>
+              {(isApproximate || !usingManual) && (
+                <p className="text-sm text-charcoal/60 max-w-sm mt-2">
+                  Is the dot on the map in the wrong place? Search for your area above or drag the
+                  dot to where you are.
+                </p>
+              )}
             </div>
           )}
 
           {/* Waiting for location */}
-          {!isLoading && !fetchError && !effectivePosition && !showManualInput && (
+          {!isLoading && !fetchError && !effectivePosition && (
             <div className="border border-dashed border-ink/20 bg-surface-muted p-10 flex flex-col items-center justify-center text-center animate-fade-in">
               <Navigation size={48} className="text-brand/45 mb-4" />
-              <h3 className="font-bold text-ink mb-2">Waiting for location</h3>
+              <h3 className="font-bold text-ink mb-2">
+                {geoLoading ? 'Detecting your location…' : 'Set your location'}
+              </h3>
               <p className="text-sm text-charcoal/60 mb-4">
-                We need your location to find nearby artisans. Click below to share it.
+                {geoLoading
+                  ? 'Allow location access if your browser asks.'
+                  : 'Search for your area above or tap the map, and we\'ll show artisans near you.'}
               </p>
-              <button
-                type="button"
-                className="btn-primary inline-flex items-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={handleUseMyLocation}
-                disabled={geoBlocked}
-                title={
-                  geoBlocked
-                    ? "Location is blocked for this site. Allow it in your browser's site settings."
-                    : undefined
-                }
-              >
-                <Navigation size={16} />
-                Share My Location
-              </button>
+              {!geoLoading && !geoBlocked && (
+                <button
+                  type="button"
+                  className="btn-primary inline-flex items-center gap-2 text-sm"
+                  onClick={handleUseMyLocation}
+                >
+                  <Navigation size={16} />
+                  Share My Location
+                </button>
+              )}
             </div>
           )}
 
