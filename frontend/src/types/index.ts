@@ -150,4 +150,8 @@ export interface ProviderDetails extends ServiceProvider {
 export interface Geoposition {
   latitude: number;
   longitude: number;
+  /** Radius of uncertainty in metres, as reported by the browser. */
+  accuracy?: number;
+  /** Human-readable place name when the position came from a search or pin. */
+  label?: string;
 }
