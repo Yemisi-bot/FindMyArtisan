@@ -276,6 +276,55 @@ router.delete('/me/images/:imageId', authenticate, async (req: AuthRequest, res:
   }
 });
 
+// PATCH /api/providers/me/location — Artisan corrects their map pin (and optionally address)
+// Registration used to lock the coordinates to whatever the browser guessed —
+// often an IP-based point in another town — with no way to fix it afterwards.
+router.patch('/me/location', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { latitude, longitude, address } = req.body ?? {};
+    const lat = Number(latitude);
+    const lng = Number(longitude);
+    if (latitude === undefined || longitude === undefined || !Number.isFinite(lat) || !Number.isFinite(lng)) {
+      res.status(400).json({ success: false, message: 'Latitude and longitude must be valid numbers.' });
+      return;
+    }
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      res.status(400).json({ success: false, message: 'Coordinates are out of range.' });
+      return;
+    }
+    if (lat === 0 && lng === 0) {
+      res.status(400).json({ success: false, message: 'A real location is required — 0, 0 is not a valid business location.' });
+      return;
+    }
+    const cleanAddress = typeof address === 'string' && address.trim() ? address.trim().slice(0, 500) : null;
+
+    const result = await query(
+      `UPDATE providers
+          SET location = ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography,
+              address = COALESCE($3, address),
+              updated_at = NOW()
+        WHERE user_id = $4
+        RETURNING id, address, ST_X(location::geometry) as longitude, ST_Y(location::geometry) as latitude`,
+      [lng, lat, cleanAddress, req.user!.userId]
+    );
+
+    if (result.rows.length === 0) {
+      res.status(404).json({ success: false, message: 'You have no artisan profile yet.' });
+      return;
+    }
+
+    logActivity(req.user!.userId, 'provider_location_updated', 'provider', result.rows[0].id, {
+      latitude: lat,
+      longitude: lng,
+    });
+
+    res.json({ success: true, message: 'Location updated.', data: result.rows[0] });
+  } catch (error) {
+    console.error('[Providers] Update location error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update location.' });
+  }
+});
+
 // POST /api/providers/:id/contact-click — User revealed this artisan's number.
 // Saved so the user can come back later and leave a review.
 router.post('/:id/contact-click', authenticate, async (req: AuthRequest, res: Response) => {
