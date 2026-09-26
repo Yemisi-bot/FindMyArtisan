@@ -8,6 +8,7 @@ import { useAuth } from '../hooks/useAuth';
 import { providersApi, assetUrl } from '../services/api';
 import StarRating from '../components/StarRating';
 import TradeIcon from '../components/TradeIcon';
+import EditLocationSection from '../components/EditLocationSection';
 
 interface WorkImage {
   id: string;
@@ -31,6 +32,8 @@ interface MyProfile {
   description?: string;
   phone: string;
   address: string;
+  latitude?: number | string | null;
+  longitude?: number | string | null;
   average_rating: string | number;
   review_count: number;
   category_name: string;
@@ -251,6 +254,13 @@ export default function ArtisanDashboard() {
           <span>{uploadNotice}</span>
         </div>
       )}
+
+      <EditLocationSection
+        address={profile.address}
+        latitude={profile.latitude}
+        longitude={profile.longitude}
+        onSaved={fetchProfile}
+      />
 
       {/* Work catalog */}
       <section className="glass-strong p-5 sm:p-8 mb-6">
