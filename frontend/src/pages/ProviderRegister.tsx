@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, type FormEvent, type ChangeEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { MapPin, Building2, Phone, Navigation, Upload, X, AlertCircle, CheckCircle } from 'lucide-react';
+import { MapPin, Building2, Phone, Upload, X, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import BusinessLocationField from '../components/BusinessLocationField';
 import { providersApi } from '../services/api';
 import type { ServiceCategory } from '../types';
 
@@ -22,7 +23,6 @@ export default function ProviderRegister() {
   const [longitude, setLongitude] = useState('');
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [profilePreview, setProfilePreview] = useState('');
-  const [gettingLocation, setGettingLocation] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [error, setError] = useState('');
@@ -95,40 +95,6 @@ export default function ProviderRegister() {
     fetchCategories();
   }, []);
 
-  // Use current location
-  const handleGetLocation = () => {
-    if (!navigator.geolocation) {
-      setError('Geolocation is not supported by your browser.');
-      return;
-    }
-
-    setGettingLocation(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLatitude(pos.coords.latitude.toString());
-        setLongitude(pos.coords.longitude.toString());
-        setGettingLocation(false);
-      },
-      (err) => {
-        let message = 'Failed to get location.';
-        switch (err.code) {
-          case err.PERMISSION_DENIED:
-            message = 'Location access was denied. Please enable location services.';
-            break;
-          case err.POSITION_UNAVAILABLE:
-            message = 'Location information is unavailable.';
-            break;
-          case err.TIMEOUT:
-            message = 'Location request timed out.';
-            break;
-        }
-        setError(message);
-        setGettingLocation(false);
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  };
-
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
@@ -161,7 +127,7 @@ export default function ProviderRegister() {
     const lat = parseFloat(latitude);
     const lng = parseFloat(longitude);
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-      setError('Location is required. Tap "Use My Current Location", or type your latitude and longitude.');
+      setError('Location is required. Use your current location, find your address, or tap the map to drop a pin.');
       return;
     }
     if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
@@ -377,59 +343,16 @@ export default function ProviderRegister() {
                 </div>
               </div>
 
-              {/* Location Coordinates */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="latitude" className="block text-sm font-medium text-charcoal/80 mb-1.5">
-                    Latitude
-                  </label>
-                  <input
-                    id="latitude"
-                    type="number"
-                    step="any"
-                    className="glass-input"
-                    placeholder="6.8475"
-                    value={latitude}
-                    onChange={(e) => setLatitude(e.target.value)}
-                    readOnly={!!latitude && gettingLocation === false}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="longitude" className="block text-sm font-medium text-charcoal/80 mb-1.5">
-                    Longitude
-                  </label>
-                  <input
-                    id="longitude"
-                    type="number"
-                    step="any"
-                    className="glass-input"
-                    placeholder="3.6518"
-                    value={longitude}
-                    onChange={(e) => setLongitude(e.target.value)}
-                    readOnly={!!longitude && gettingLocation === false}
-                  />
-                </div>
-              </div>
-
-              {/* Use Current Location Button */}
-              <button
-                type="button"
-                className="btn-glass inline-flex items-center gap-2 w-full justify-center"
-                onClick={handleGetLocation}
-                disabled={gettingLocation}
-              >
-                {gettingLocation ? (
-                  <>
-                    <span className="spinner !w-4 !h-4 !border-2" />
-                    Getting Location...
-                  </>
-                ) : (
-                  <>
-                    <Navigation className="w-4 h-4" />
-                    Use My Current Location
-                  </>
-                )}
-              </button>
+              {/* Business location (device / address lookup / map pin) */}
+              <BusinessLocationField
+                latitude={latitude}
+                longitude={longitude}
+                address={address}
+                onChange={(la, ln) => {
+                  setLatitude(la);
+                  setLongitude(ln);
+                }}
+              />
 
               {/* Profile Photo */}
               <div>
