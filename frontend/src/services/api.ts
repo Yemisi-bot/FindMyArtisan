@@ -110,6 +110,9 @@ export const providersApi = {
     });
   },
 
+  updateMyLocation: (data: { latitude: number; longitude: number; address?: string }) =>
+    api.patch<ApiResponse>('/providers/me/location', data),
+
   getCategories: () =>
     api.get<ApiResponse>('/categories'),
 
